@@ -1,0 +1,14 @@
+*.o
+*.*~
+out/
+*.swp
+*.exe
+*.dll
+*.so
+*.lib
+*.a
+*.db
+
+/build
+/out
+/default
