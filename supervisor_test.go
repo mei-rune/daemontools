@@ -1,4 +1,4 @@
-package main
+package daemontools
 
 import (
 	"bufio"
@@ -176,17 +176,16 @@ func TestStartFailed(t *testing.T) {
 }
 
 func TestStartFailedWithRepectedCount(t *testing.T) {
-	port := ":9483"
 	count := int32(0)
 
-	ln, e := net.Listen("tcp", port)
+	ln, e := net.Listen("tcp", ":0")
 	if e != nil {
 		fmt.Println()
 		return
 	}
+	ar := strings.Split(ln.Addr().String(), ":")
 
 	go func() {
-
 		for {
 			conn, e := ln.Accept()
 			if e != nil {
@@ -197,8 +196,7 @@ func TestStartFailedWithRepectedCount(t *testing.T) {
 			reader := textproto.NewReader(bufio.NewReader(conn))
 			_, e = reader.ReadLine()
 			if nil != e {
-				fmt.Println(e)
-				break
+				fmt.Println("c:", e)
 			}
 		}
 	}()
@@ -212,7 +210,7 @@ func TestStartFailedWithRepectedCount(t *testing.T) {
 		killTimeout: time.Second,
 		out:         &buffer,
 		start: &command{proc: "go",
-			arguments: []string{"run", filepath.Join(wd, "mock", "client.go"), "127.0.0.1" + port, "exit"}}}
+			arguments: []string{"run", filepath.Join(wd, "mock", "client.go"), "127.0.0.1:" + ar[len(ar)-1], "exit"}}}
 
 	s.Start()
 
@@ -221,8 +219,8 @@ func TestStartFailedWithRepectedCount(t *testing.T) {
 		s.UntilStopped()
 	}()
 
-	ss := buffer.String()
 	e = s.UntilStarted()
+	ss := buffer.String()
 	if nil == e {
 		t.Error(ss)
 	} else if strings.Contains(ss, prompt) {
