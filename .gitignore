@@ -12,3 +12,5 @@ out/
 /build
 /out
 /default
+/daemontools/logs
+/daemontools/*.conf

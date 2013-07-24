@@ -1,18 +1,30 @@
 package daemontools
 
 import (
-	"bufio"
+	"log"
+	// "bufio"
+	_ "expvar"
 	"fmt"
-	"net/textproto"
+	"net/http"
+	_ "net/http/pprof"
+	//"net/textproto"
 	"os"
 	"os/signal"
 )
 
 type manager struct {
-	supervisors []supervisor
+	supervisors []*supervisor
 }
 
 func runCommand(s string) {
+}
+
+func (self *manager) Stats() interface{} {
+	res := make([]interface{}, len(self.supervisors))
+	for i, s := range self.supervisors {
+		res[i] = s.stats()
+	}
+	return res
 }
 
 func (self *manager) rpel() {
@@ -21,20 +33,22 @@ func (self *manager) rpel() {
 	signal.Notify(c, os.Interrupt, os.Kill)
 
 	go func() {
-		reader := textproto.NewReader(bufio.NewReader(os.Stdin))
-		for {
-			s, e := reader.ReadLine()
-			if nil != e {
-				return
-			}
+		log.Println("[daemontools] serving at '" + *listenAddress + "'")
+		http.ListenAndServe(*listenAddress, nil)
+		// reader := textproto.NewReader(bufio.NewReader(os.Stdin))
+		// for {
+		// 	s, e := reader.ReadLine()
+		// 	if nil != e {
+		// 		return
+		// 	}
 
-			if "exit" == s {
-				exit <- s
-				break
-			}
+		// 	if "exit" == s {
+		// 		exit <- s
+		// 		break
+		// 	}
 
-			runCommand(s)
-		}
+		// 	runCommand(s)
+		// }
 	}()
 	select {
 	case s := <-c:

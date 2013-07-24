@@ -40,6 +40,20 @@ func srvString(status int32) string {
 	return fmt.Sprintf("%d", status)
 }
 
+func procString(status int32) string {
+	switch status {
+	case PROC_INIT:
+		return "PROC_INIT"
+	case PROC_STARTING:
+		return "PROC_STARTING"
+	case PROC_RUNNING:
+		return "PROC_RUNNING"
+	case PROC_STOPPNG:
+		return "PROC_STOPPING"
+	}
+	return fmt.Sprintf("%d", status)
+}
+
 type command struct {
 	proc         string
 	arguments    []string
@@ -80,6 +94,16 @@ type supervisor struct {
 	lock sync.Mutex
 	cond *sync.Cond
 	once sync.Once
+}
+
+func (self *supervisor) stats() interface{} {
+	return map[string]interface{}{
+		"name":         self.name,
+		"prompt":       self.prompt,
+		"repected":     self.repected,
+		"kill_timeout": self.killTimeout,
+		"srv_status":   srvString(atomic.LoadInt32(&self.srv_status)),
+		"proc_status":  procString(atomic.LoadInt32(&self.proc_status))}
 }
 
 func (self *supervisor) init() {
@@ -174,13 +198,13 @@ func (self *supervisor) interrupt() {
 		default:
 			ok, txt = self.killByCmd(pid)
 		}
-	}
 
-	if ok {
-		if 0 != len(txt) {
-			self.out.Write([]byte(txt))
+		if ok {
+			if 0 != len(txt) {
+				self.out.Write([]byte(txt))
+			}
+			return
 		}
-		return
 	}
 end:
 	e := kill(pid)
@@ -309,6 +333,7 @@ func (self *supervisor) killByCmd(pid int) (bool, string) {
 
 func (self *supervisor) logString(msg string) {
 	if nil == self.out {
+		fmt.Print(msg)
 		return
 	}
 	self.logBytes([]byte(msg))
@@ -316,6 +341,7 @@ func (self *supervisor) logString(msg string) {
 
 func (self *supervisor) logBytes(msg []byte) {
 	if nil == self.out {
+		fmt.Print(string(msg))
 		return
 	}
 
