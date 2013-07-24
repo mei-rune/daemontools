@@ -1,14 +1,17 @@
 package daemontools
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"log"
+	"net/textproto"
 	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -80,6 +83,7 @@ func (self *command) command() *exec.Cmd {
 type supervisor struct {
 	name        string
 	prompt      string
+	pidfile     string
 	repected    int
 	killTimeout time.Duration
 	start       *command
@@ -332,16 +336,22 @@ func (self *supervisor) killByCmd(pid int) (bool, string) {
 }
 
 func (self *supervisor) logString(msg string) {
-	if nil == self.out {
+	if *is_print {
 		fmt.Print(msg)
+		return
+	}
+	if nil == self.out {
 		return
 	}
 	self.logBytes([]byte(msg))
 }
 
 func (self *supervisor) logBytes(msg []byte) {
-	if nil == self.out {
+	if *is_print {
 		fmt.Print(string(msg))
+		return
+	}
+	if nil == self.out {
 		return
 	}
 
@@ -393,6 +403,58 @@ func (self *supervisor) loop() {
 	}
 }
 
+func (self *supervisor) runPidfile(cb func()) bool {
+	if 0 == len(self.pidfile) {
+		return true
+	}
+
+	fd, e := os.Open(self.pidfile)
+	if nil != e {
+		_, err := os.Stat(self.pidfile)
+		if nil == err {
+			self.logString("[sys] open pid file '" + self.pidfile + "' is error, permission error, " + e.Error() + "\r\n")
+		} else {
+			self.logString("[sys] pid file '" + self.pidfile + "' is not exists? " + e.Error() + "\r\n")
+		}
+		return true
+	}
+
+	reader := textproto.NewReader(bufio.NewReader(fd))
+	line, e := reader.ReadLine()
+	if nil != e {
+		self.logString("[sys] read pid file '" + self.pidfile + "' failed, " + e.Error() + "\r\n")
+		return false
+	}
+
+	pid, e := strconv.ParseInt(line, 10, 0)
+	if nil != e {
+		self.logString("[sys] read pid file '" + self.pidfile + "' failed, " + e.Error() + "\r\n")
+		return false
+	}
+
+	self.logString("[sys] read pid file '" + self.pidfile + "' ok, pid = " + line + "\r\n")
+	pr, e := os.FindProcess(int(pid))
+	if nil != e {
+		self.logString("[sys] find process with pid was '" + line + "' failed, " + e.Error() + "\r\n")
+		return false
+	}
+	defer pr.Release()
+
+	if nil != cb {
+		cb()
+	}
+
+	self.cond.L.Lock()
+	self.pid = int(pid)
+	self.cond.L.Unlock()
+	_, e = pr.Wait()
+	if nil != e {
+		self.logString("[sys] find process with pid was '" + line + "' failed, " + e.Error() + "\r\n")
+	}
+	self.logString("[sys] process '" + line + "' is exited.\r\n")
+	return false
+}
+
 func (self *supervisor) run(cb func()) {
 	defer func() {
 
@@ -421,10 +483,19 @@ func (self *supervisor) run(cb func()) {
 
 	self.logString("[sys] -------------------- proc start --------------------\r\n")
 
+	if !self.runPidfile(cb) {
+		return
+	}
+
 	cmd := self.start.command()
 	if 0 == len(self.prompt) {
-		cmd.Stdout = self.out
-		cmd.Stderr = self.out
+		if *is_print {
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+		} else {
+			cmd.Stdout = self.out
+			cmd.Stderr = self.out
+		}
 		if nil != cb {
 			cb()
 		}

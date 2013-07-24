@@ -97,3 +97,7 @@ func (self *safe_writer) Write(p []byte) (n int, e error) {
 	defer self.Unlock()
 	return self.Write(p)
 }
+
+func safe_io(out io.Writer) io.Writer {
+	return &safe_writer{out: out}
+}

@@ -183,7 +183,7 @@ func loadConfigs(root, file string) (*manager, error) {
 	}
 
 	if !dirExist(logPath) {
-		os.Mkdir(logPath, 0)
+		os.Mkdir(logPath, 0660)
 	}
 
 	logArguments := mapWithDefault(arguments, "log", map[string]interface{}{})
@@ -232,7 +232,6 @@ func loadConfig(file string, args map[string]interface{}, supervisors []*supervi
 	case map[string]interface{}:
 		arguments := []map[string]interface{}{value, args}
 		return loadSupervisor(arguments, supervisors)
-
 	case []interface{}:
 		for idx, o := range value {
 			attributes, ok := o.(map[string]interface{})
@@ -246,12 +245,12 @@ func loadConfig(file string, args map[string]interface{}, supervisors []*supervi
 				return nil, e
 			}
 		}
+		return supervisors, nil
 	}
-	return nil, errors.New("it is not a map or array.")
+	return nil, fmt.Errorf("it is not a map or array - %T", v)
 }
 
 func loadSupervisor(arguments []map[string]interface{}, supervisors []*supervisor) ([]*supervisor, error) {
-
 	// type supervisor struct {
 	//   name        string
 	//   prompt      string
@@ -266,6 +265,11 @@ func loadSupervisor(arguments []map[string]interface{}, supervisors []*superviso
 		return nil, errors.New("'name' is missing.")
 	}
 	prompt := stringWithArguments(arguments, "prompt", "")
+	pidfile := stringWithArguments(arguments, "pidfile", "")
+	if 0 != len(pidfile) {
+		pidfile = filepath.Clean(abs(pidfile))
+	}
+
 	repected := intWithArguments(arguments, "repected", 5)
 	if repected <= 0 {
 		return nil, errors.New("'repected' must is greate 0.")
@@ -299,7 +303,7 @@ func loadSupervisor(arguments []map[string]interface{}, supervisors []*superviso
 			return nil, errors.New("'stop' is invalid.")
 		}
 
-		start, e = loadCommand(append([]map[string]interface{}{m}, arguments[1:]...))
+		stop, e = loadCommand(append([]map[string]interface{}{m}, arguments[1:]...))
 		if nil != e {
 			return nil, e
 		}
@@ -307,6 +311,7 @@ func loadSupervisor(arguments []map[string]interface{}, supervisors []*superviso
 
 	supervisors = append(supervisors, &supervisor{name: name,
 		prompt:      prompt,
+		pidfile:     pidfile,
 		repected:    repected,
 		killTimeout: killTimeout,
 		start:       start,
@@ -321,7 +326,6 @@ func loadCommand(args []map[string]interface{}) (*command, error) {
 	//   environments []string
 	//   directory    string
 	// }
-
 	proc := stringWithArguments(args, "execute", "")
 	if 0 == len(proc) {
 		return nil, errors.New("'execute' is missing.")
