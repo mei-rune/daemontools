@@ -343,19 +343,7 @@ func (self *supervisor) logString(msg string) {
 	if nil == self.out {
 		return
 	}
-	self.logBytes([]byte(msg))
-}
-
-func (self *supervisor) logBytes(msg []byte) {
-	if *is_print {
-		fmt.Print(string(msg))
-		return
-	}
-	if nil == self.out {
-		return
-	}
-
-	_, err := self.out.Write(msg)
+	_, err := io.WriteString(self.out, msg)
 	if nil != err {
 		log.Printf("[sys] write exception to file error - %v\r\n", err)
 	}
@@ -403,7 +391,63 @@ func (self *supervisor) loop() {
 	}
 }
 
-func (self *supervisor) runPidfile(cb func()) bool {
+func (self *supervisor) utilExitedBySleep(pid int) bool {
+	for SRV_RUNNING == atomic.LoadInt32(&self.srv_status) {
+		time.Sleep(time.Second)
+		self.run(nil)
+		pr, e := os.FindProcess(int(pid))
+		if nil != e {
+			if os.IsPermission(e) {
+			}
+		}
+	}
+}
+
+func (self *supervisor) utilExitedByWait(pid int) bool {
+	pr, e := os.FindProcess(int(pid))
+	if nil != e {
+		if os.IsPermission(e) {
+			if nil != cb {
+				cb()
+			}
+
+			self.cond.L.Lock()
+			if is_owner {
+				self.pid = int(pid)
+			} else {
+				self.pid = 0
+			}
+			self.cond.L.Unlock()
+
+			self.waitProcess(pid)
+		} else {
+			self.logString("[sys] find process with pid was '" + line + "' failed, " + e.Error() + "\r\n")
+		}
+		return false
+	}
+	defer pr.Release()
+
+	if nil != cb {
+		cb()
+	}
+
+	self.cond.L.Lock()
+	if is_owner {
+		self.pid = int(pid)
+	} else {
+		self.pid = 0
+	}
+	self.cond.L.Unlock()
+
+	_, e = pr.Wait()
+	if nil != e {
+		self.logString("[sys] find process with pid was '" + line + "' failed, " + e.Error() + "\r\n")
+	}
+	self.logString("[sys] process '" + line + "' is exited.\r\n")
+	return false
+}
+
+func (self *supervisor) runPidfile(cb func(), is_owner bool) bool {
 	if 0 == len(self.pidfile) {
 		return true
 	}
@@ -433,26 +477,21 @@ func (self *supervisor) runPidfile(cb func()) bool {
 	}
 
 	self.logString("[sys] read pid file '" + self.pidfile + "' ok, pid = " + line + "\r\n")
-	pr, e := os.FindProcess(int(pid))
-	if nil != e {
-		self.logString("[sys] find process with pid was '" + line + "' failed, " + e.Error() + "\r\n")
-		return false
-	}
-	defer pr.Release()
 
-	if nil != cb {
-		cb()
-	}
+	if !is_owner {
+		self.cond.L.Lock()
+		self.pid = 0
+		self.stdin = nil
+		self.cond.L.Unlock()
 
-	self.cond.L.Lock()
-	self.pid = int(pid)
-	self.cond.L.Unlock()
-	_, e = pr.Wait()
-	if nil != e {
-		self.logString("[sys] find process with pid was '" + line + "' failed, " + e.Error() + "\r\n")
+		return self.utilExitedBySleep(pid)
+	} else {
+		self.cond.L.Lock()
+		self.pid = int(pid)
+		self.stdin = nil
+		self.cond.L.Unlock()
+		return self.utilExitedByWait(pid)
 	}
-	self.logString("[sys] process '" + line + "' is exited.\r\n")
-	return false
 }
 
 func (self *supervisor) run(cb func()) {
@@ -483,7 +522,7 @@ func (self *supervisor) run(cb func()) {
 
 	self.logString("[sys] -------------------- proc start --------------------\r\n")
 
-	if !self.runPidfile(cb) {
+	if !self.runPidfile(cb, false) {
 		return
 	}
 
@@ -527,4 +566,9 @@ func (self *supervisor) run(cb func()) {
 		self.logString(fmt.Sprintf("[sys] wait process failed - %v\r\n", e))
 		return
 	}
+
+	self.cond.L.Lock()
+	self.stdin = nil
+	self.cond.L.Unlock()
+	self.runPidfile(cb, true)
 }
