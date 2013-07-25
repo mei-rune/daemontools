@@ -17,22 +17,22 @@ import (
 func TestStart(t *testing.T) {
 	prompt := "test_starts"
 	wd, _ := os.Getwd()
-	s := &supervisor{name: "test_start",
-		prompt:      prompt,
-		repected:    5,
-		killTimeout: time.Second,
-		//out:         os.Stdout,
-		start: &command{proc: "go",
-			arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), prompt}}}
+	s := &supervisor_default{prompt: prompt,
+		supervisorBase: supervisorBase{proc_name: "test_start",
+			repected:    5,
+			killTimeout: time.Second,
+			//out:         os.Stdout,
+			start_cmd: &command{proc: "go",
+				arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), prompt}}}}
 
-	s.Start()
+	s.start()
 
 	defer func() {
-		s.Stop()
-		s.UntilStopped()
+		s.stop()
+		s.untilStopped()
 	}()
 
-	e := s.UntilStarted()
+	e := s.untilStarted()
 	if nil != e {
 		t.Error(e)
 	}
@@ -41,22 +41,22 @@ func TestStart(t *testing.T) {
 func TestStartWithoutPrompt(t *testing.T) {
 	prompt := ""
 	wd, _ := os.Getwd()
-	s := &supervisor{name: "test_start",
-		prompt:      prompt,
-		repected:    5,
-		killTimeout: time.Second,
-		//out:         os.Stdout,
-		start: &command{proc: "go",
-			arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), "sdfsdfsdffsd"}}}
+	s := &supervisor_default{prompt: prompt,
+		supervisorBase: supervisorBase{proc_name: "test_start",
+			repected:    5,
+			killTimeout: time.Second,
+			//out:         os.Stdout,
+			start_cmd: &command{proc: "go",
+				arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), "sdfsdfsdffsd"}}}}
 
-	s.Start()
+	s.start()
 
 	defer func() {
-		s.Stop()
-		s.UntilStopped()
+		s.stop()
+		s.untilStopped()
 	}()
 
-	e := s.UntilStarted()
+	e := s.untilStarted()
 	if nil != e {
 		t.Error(e)
 	}
@@ -65,22 +65,22 @@ func TestStartWithoutPrompt(t *testing.T) {
 func TestStartWithPrompt(t *testing.T) {
 	prompt := "TestStartWithPrompt"
 	wd, _ := os.Getwd()
-	s := &supervisor{name: "test_start",
-		prompt:      prompt,
-		repected:    5,
-		killTimeout: time.Second,
-		//out:         os.Stdout,
-		start: &command{proc: "go",
-			arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), prompt}}}
+	s := &supervisor_default{prompt: prompt,
+		supervisorBase: supervisorBase{proc_name: "test_start",
+			repected:    5,
+			killTimeout: time.Second,
+			//out:         os.Stdout,
+			start_cmd: &command{proc: "go",
+				arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), prompt}}}}
 
-	s.Start()
+	s.start()
 
 	defer func() {
-		s.Stop()
-		s.UntilStopped()
+		s.stop()
+		s.untilStopped()
 	}()
 
-	e := s.UntilStarted()
+	e := s.untilStarted()
 	if nil != e {
 		t.Error(e)
 	}
@@ -90,22 +90,22 @@ func TestStartWithRedirect(t *testing.T) {
 	prompt := "TestStartWithRedirect"
 	var buffer bytes.Buffer
 	wd, _ := os.Getwd()
-	s := &supervisor{name: "test_start",
-		prompt:      prompt,
-		repected:    5,
-		killTimeout: time.Second,
-		out:         &buffer,
-		start: &command{proc: "go",
-			arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), prompt}}}
+	s := &supervisor_default{prompt: prompt,
+		supervisorBase: supervisorBase{proc_name: "test_start",
+			repected:    5,
+			killTimeout: time.Second,
+			out:         &buffer,
+			start_cmd: &command{proc: "go",
+				arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), prompt}}}}
 
-	s.Start()
+	s.start()
 
 	defer func() {
-		s.Stop()
-		s.UntilStopped()
+		s.stop()
+		s.untilStopped()
 	}()
 
-	e := s.UntilStarted()
+	e := s.untilStarted()
 	if nil != e {
 		t.Error(e)
 		t.Error(buffer.String())
@@ -116,25 +116,25 @@ func TestStartWithEcho(t *testing.T) {
 	prompt := "TestStartWithEcho"
 	var buffer bytes.Buffer
 	wd, _ := os.Getwd()
-	s := &supervisor{name: "test_start",
-		prompt:      prompt,
-		repected:    5,
-		killTimeout: time.Second,
-		out:         &buffer,
-		start: &command{proc: "go",
-			arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), prompt}}}
+	s := &supervisor_default{prompt: prompt,
+		supervisorBase: supervisorBase{proc_name: "test_start",
+			repected:    5,
+			killTimeout: time.Second,
+			out:         &buffer,
+			start_cmd: &command{proc: "go",
+				arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), prompt}}}}
 
-	s.Start()
+	s.start()
 
 	defer func() {
-		s.Stop()
-		s.UntilStopped()
+		s.stop()
+		s.untilStopped()
 	}()
 
-	e := s.UntilStarted()
+	e := s.untilStarted()
 
-	s.Stop()
-	s.UntilStopped()
+	s.stop()
+	s.untilStopped()
 
 	ss := buffer.String()
 	if nil != e {
@@ -149,23 +149,23 @@ func TestStartFailed(t *testing.T) {
 	prompt := "TestStartFailed"
 	var buffer bytes.Buffer
 	wd, _ := os.Getwd()
-	s := &supervisor{name: "test_start",
-		prompt:      prompt,
-		repected:    5,
-		killTimeout: time.Second,
-		out:         &buffer,
-		start: &command{proc: "go",
-			arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), "asdfsdf"}}}
+	s := &supervisor_default{prompt: prompt,
+		supervisorBase: supervisorBase{proc_name: "test_start",
+			repected:    5,
+			killTimeout: time.Second,
+			out:         &buffer,
+			start_cmd: &command{proc: "go",
+				arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), "asdfsdf"}}}}
 
-	s.Start()
+	s.start()
 
 	defer func() {
-		s.Stop()
-		s.UntilStopped()
+		s.stop()
+		s.untilStopped()
 	}()
 
 	ss := buffer.String()
-	e := s.UntilStarted()
+	e := s.untilStarted()
 	if nil == e {
 		t.Error(ss)
 	} else if strings.Contains(ss, prompt) {
@@ -204,22 +204,22 @@ func TestStartFailedWithRepectedCount(t *testing.T) {
 	prompt := "TestStartFailedWithRepectedCount"
 	var buffer bytes.Buffer
 	wd, _ := os.Getwd()
-	s := &supervisor{name: "test_start",
-		prompt:      prompt,
-		repected:    5,
-		killTimeout: time.Second,
-		out:         &buffer,
-		start: &command{proc: "go",
-			arguments: []string{"run", filepath.Join(wd, "mock", "client.go"), "127.0.0.1:" + ar[len(ar)-1], "exit"}}}
+	s := &supervisor_default{prompt: prompt,
+		supervisorBase: supervisorBase{proc_name: "test_start",
+			repected:    5,
+			killTimeout: time.Second,
+			out:         &buffer,
+			start_cmd: &command{proc: "go",
+				arguments: []string{"run", filepath.Join(wd, "mock", "client.go"), "127.0.0.1:" + ar[len(ar)-1], "exit"}}}}
 
-	s.Start()
+	s.start()
 
 	defer func() {
-		s.Stop()
-		s.UntilStopped()
+		s.stop()
+		s.untilStopped()
 	}()
 
-	e = s.UntilStarted()
+	e = s.untilStarted()
 	ss := buffer.String()
 	if nil == e {
 		t.Error(ss)
@@ -237,31 +237,31 @@ func TestStopByCmd(t *testing.T) {
 	prompt := "listen ok"
 	var buffer bytes.Buffer
 	wd, _ := os.Getwd()
-	s := &supervisor{name: "test_start",
-		prompt:      prompt,
-		repected:    5,
-		killTimeout: 3 * time.Second,
-		out:         &buffer,
-		start: &command{proc: "go",
-			arguments: []string{"run", filepath.Join(wd, "mock", "server.go"), port}},
-		stop: &command{proc: "go",
-			arguments: []string{"run", filepath.Join(wd, "mock", "client.go"), "127.0.0.1" + port, "exit"}}}
+	s := &supervisor_default{prompt: prompt,
+		supervisorBase: supervisorBase{proc_name: "test_start",
+			repected:    5,
+			killTimeout: 3 * time.Second,
+			out:         &buffer,
+			start_cmd: &command{proc: "go",
+				arguments: []string{"run", filepath.Join(wd, "mock", "server.go"), port}},
+			stop_cmd: &command{proc: "go",
+				arguments: []string{"run", filepath.Join(wd, "mock", "client.go"), "127.0.0.1" + port, "exit"}}}}
 
-	s.Start()
+	s.start()
 
 	defer func() {
-		s.Stop()
-		s.UntilStopped()
+		s.stop()
+		s.untilStopped()
 	}()
 
-	e := s.UntilStarted()
+	e := s.untilStarted()
 	if nil != e {
 		t.Error(e)
 		return
 	}
 
-	s.Stop()
-	e = s.UntilStopped()
+	s.stop()
+	e = s.untilStopped()
 
 	ss := buffer.String()
 
@@ -279,29 +279,29 @@ func TestStopByNoStop(t *testing.T) {
 	prompt := "ok"
 	var buffer bytes.Buffer
 	wd, _ := os.Getwd()
-	s := &supervisor{name: "test_start",
-		prompt:      prompt,
-		repected:    5,
-		killTimeout: 3 * time.Second,
-		out:         &buffer,
-		start: &command{proc: "go",
-			arguments: []string{"run", filepath.Join(wd, "mock", "echo.go"), "TestStopByConsole"}}}
+	s := &supervisor_default{prompt: prompt,
+		supervisorBase: supervisorBase{proc_name: "test_start",
+			repected:    5,
+			killTimeout: 3 * time.Second,
+			out:         &buffer,
+			start_cmd: &command{proc: "go",
+				arguments: []string{"run", filepath.Join(wd, "mock", "echo.go"), "TestStopByConsole"}}}}
 
-	s.Start()
+	s.start()
 
 	defer func() {
-		s.Stop()
-		s.UntilStopped()
+		s.stop()
+		s.untilStopped()
 	}()
 
-	e := s.UntilStarted()
+	e := s.untilStarted()
 	if nil != e {
 		t.Error(e)
 		return
 	}
 
-	s.Stop()
-	e = s.UntilStopped()
+	s.stop()
+	e = s.untilStopped()
 
 	ss := buffer.String()
 
@@ -319,31 +319,31 @@ func TestStopByConsole(t *testing.T) {
 	prompt := "ok"
 	var buffer bytes.Buffer
 	wd, _ := os.Getwd()
-	s := &supervisor{name: "test_start",
-		prompt:      prompt,
-		repected:    5,
-		killTimeout: 3 * time.Second,
-		out:         &buffer,
-		start: &command{proc: "go",
-			arguments: []string{"run", filepath.Join(wd, "mock", "echo.go"), "TestStopByConsole"}},
-		stop: &command{proc: "__console__",
-			arguments: []string{"TestsssStopByConsole2", "TestStopByConsole"}}}
+	s := &supervisor_default{prompt: prompt,
+		supervisorBase: supervisorBase{proc_name: "test_start",
+			repected:    5,
+			killTimeout: 3 * time.Second,
+			out:         &buffer,
+			start_cmd: &command{proc: "go",
+				arguments: []string{"run", filepath.Join(wd, "mock", "echo.go"), "TestStopByConsole"}},
+			stop_cmd: &command{proc: "__console__",
+				arguments: []string{"TestsssStopByConsole2", "TestStopByConsole"}}}}
 
-	s.Start()
+	s.start()
 
 	defer func() {
-		s.Stop()
-		s.UntilStopped()
+		s.stop()
+		s.untilStopped()
 	}()
 
-	e := s.UntilStarted()
+	e := s.untilStarted()
 	if nil != e {
 		t.Error(e)
 		return
 	}
 
-	s.Stop()
-	e = s.UntilStopped()
+	s.stop()
+	e = s.untilStopped()
 
 	ss := buffer.String()
 
@@ -365,31 +365,31 @@ func TestStopByConsoleWithErrorExec(t *testing.T) {
 	prompt := "ok"
 	var buffer bytes.Buffer
 	wd, _ := os.Getwd()
-	s := &supervisor{name: "test_start",
-		prompt:      prompt,
-		repected:    5,
-		killTimeout: 3 * time.Second,
-		out:         &buffer,
-		start: &command{proc: "go",
-			arguments: []string{"run", filepath.Join(wd, "mock", "echo.go"), "TestStopByConsole"}},
-		stop: &command{proc: "__console__",
-			arguments: []string{"TestStopByConsoleWithErrorExec", "TestStopByConsoleWithErrorExec"}}}
+	s := &supervisor_default{prompt: prompt,
+		supervisorBase: supervisorBase{proc_name: "test_start",
+			repected:    5,
+			killTimeout: 3 * time.Second,
+			out:         &buffer,
+			start_cmd: &command{proc: "go",
+				arguments: []string{"run", filepath.Join(wd, "mock", "echo.go"), "TestStopByConsole"}},
+			stop_cmd: &command{proc: "__console__",
+				arguments: []string{"TestStopByConsoleWithErrorExec", "TestStopByConsoleWithErrorExec"}}}}
 
-	s.Start()
+	s.start()
 
 	defer func() {
-		s.Stop()
-		s.UntilStopped()
+		s.stop()
+		s.untilStopped()
 	}()
 
-	e := s.UntilStarted()
+	e := s.untilStarted()
 	if nil != e {
 		t.Error(e)
 		return
 	}
 
-	s.Stop()
-	e = s.UntilStopped()
+	s.stop()
+	e = s.untilStopped()
 
 	ss := buffer.String()
 
@@ -407,30 +407,30 @@ func TestStopByKill(t *testing.T) {
 	prompt := "ok"
 	var buffer bytes.Buffer
 	wd, _ := os.Getwd()
-	s := &supervisor{name: "test_start",
-		prompt:      prompt,
-		repected:    5,
-		killTimeout: 3 * time.Second,
-		out:         &buffer,
-		start: &command{proc: "go",
-			arguments: []string{"run", filepath.Join(wd, "mock", "echo.go"), "TestStopByKill"}},
-		stop: &command{proc: "__kill__"}}
+	s := &supervisor_default{prompt: prompt,
+		supervisorBase: supervisorBase{proc_name: "test_start",
+			repected:    5,
+			killTimeout: 3 * time.Second,
+			out:         &buffer,
+			start_cmd: &command{proc: "go",
+				arguments: []string{"run", filepath.Join(wd, "mock", "echo.go"), "TestStopByKill"}},
+			stop_cmd: &command{proc: "__kill__"}}}
 
-	s.Start()
+	s.start()
 
 	defer func() {
-		s.Stop()
-		s.UntilStopped()
+		s.stop()
+		s.untilStopped()
 	}()
 
-	e := s.UntilStarted()
+	e := s.untilStarted()
 	if nil != e {
 		t.Error(e)
 		return
 	}
 
-	s.Stop()
-	e = s.UntilStopped()
+	s.stop()
+	e = s.untilStopped()
 
 	ss := buffer.String()
 

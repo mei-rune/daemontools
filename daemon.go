@@ -149,7 +149,7 @@ func loadConfigs(root, file string) (*manager, error) {
 		filepath.Clean(abs(filepath.Join(root, "*-autostart.conf"))),
 		filepath.Clean(abs(filepath.Join(root, "autostart-*.conf"))))
 
-	supervisors := make([]*supervisor, 0, 10)
+	supervisors := make([]supervisor, 0, 10)
 	for _, pattern := range patterns {
 		matches, e := filepath.Glob(pattern)
 		if nil != e {
@@ -197,16 +197,16 @@ func loadConfigs(root, file string) (*manager, error) {
 	}
 
 	for _, s := range supervisors {
-		var e error
-		s.out, e = newRotateFile(filepath.Clean(abs(filepath.Join(logPath, s.name+".log"))), maxBytes, maxNum)
+		out, e := newRotateFile(filepath.Clean(abs(filepath.Join(logPath, s.name()+".log"))), maxBytes, maxNum)
 		if nil != e {
-			return nil, errors.New("open log failed for '" + s.name + "', " + e.Error())
+			return nil, errors.New("open log failed for '" + s.name() + "', " + e.Error())
 		}
+		s.setOutput(out)
 	}
 	return &manager{supervisors: supervisors}, nil
 }
 
-func loadConfig(file string, args map[string]interface{}, supervisors []*supervisor) ([]*supervisor, error) {
+func loadConfig(file string, args map[string]interface{}, supervisors []supervisor) ([]supervisor, error) {
 	t, e := template.ParseFiles(file)
 	if nil != e {
 		return nil, errors.New("read file failed, " + e.Error())
@@ -250,7 +250,7 @@ func loadConfig(file string, args map[string]interface{}, supervisors []*supervi
 	return nil, fmt.Errorf("it is not a map or array - %T", v)
 }
 
-func loadSupervisor(arguments []map[string]interface{}, supervisors []*supervisor) ([]*supervisor, error) {
+func loadSupervisor(arguments []map[string]interface{}, supervisors []supervisor) ([]supervisor, error) {
 	// type supervisor struct {
 	//   name        string
 	//   prompt      string
@@ -264,17 +264,11 @@ func loadSupervisor(arguments []map[string]interface{}, supervisors []*superviso
 	if 0 == len(name) {
 		return nil, errors.New("'name' is missing.")
 	}
-	prompt := stringWithArguments(arguments, "prompt", "")
-	pidfile := stringWithArguments(arguments, "pidfile", "")
-	if 0 != len(pidfile) {
-		pidfile = filepath.Clean(abs(pidfile))
-	}
-
 	repected := intWithArguments(arguments, "repected", 5)
 	if repected <= 0 {
 		return nil, errors.New("'repected' must is greate 0.")
 	}
-	killTimeout := durationWithArguments(arguments, "killTimeout", 5)
+	killTimeout := durationWithArguments(arguments, "killTimeout", 5*time.Second)
 	if killTimeout <= 0*time.Second {
 		return nil, errors.New("'killTimeout' must is greate 0s.")
 	}
@@ -309,13 +303,35 @@ func loadSupervisor(arguments []map[string]interface{}, supervisors []*superviso
 		}
 	}
 
-	supervisors = append(supervisors, &supervisor{name: name,
-		prompt:      prompt,
-		pidfile:     pidfile,
-		repected:    repected,
-		killTimeout: killTimeout,
-		start:       start,
-		stop:        stop})
+	prompt := stringWithArguments(arguments, "prompt", "")
+	pidfile := stringWithArguments(arguments, "pidfile", "")
+	if 0 != len(pidfile) {
+
+		if nil != stop {
+			switch stop.proc {
+			case "__kill___", "":
+				return nil, errors.New("'__kill___' is not unsupported for pidfile")
+			case "__console__":
+				return nil, errors.New("'__console__' is not unsupported for pidfile")
+			}
+		}
+
+		pidfile = filepath.Clean(abs(pidfile))
+		supervisors = append(supervisors, &supervisorWithPidfile{pidfile: pidfile,
+			supervisorBase: supervisorBase{proc_name: name,
+				repected:    repected,
+				killTimeout: killTimeout,
+				start_cmd:   start,
+				stop_cmd:    stop}})
+
+	} else {
+		supervisors = append(supervisors, &supervisor_default{prompt: prompt,
+			supervisorBase: supervisorBase{proc_name: name,
+				repected:    repected,
+				killTimeout: killTimeout,
+				start_cmd:   start,
+				stop_cmd:    stop}})
+	}
 	return supervisors, nil
 }
 

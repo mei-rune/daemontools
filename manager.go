@@ -13,7 +13,7 @@ import (
 )
 
 type manager struct {
-	supervisors []*supervisor
+	supervisors []supervisor
 }
 
 func runCommand(s string) {
@@ -32,6 +32,16 @@ func (self *manager) rpel() {
 	exit := make(chan string, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 
+	select {
+	case s := <-c:
+		fmt.Println("Got signal:", s)
+		return
+	case <-exit:
+		return
+	}
+}
+
+func (self *manager) runForever() {
 	go func() {
 		log.Println("[daemontools] serving at '" + *listenAddress + "'")
 		http.ListenAndServe(*listenAddress, nil)
@@ -50,25 +60,16 @@ func (self *manager) rpel() {
 		// 	runCommand(s)
 		// }
 	}()
-	select {
-	case s := <-c:
-		fmt.Println("Got signal:", s)
-		return
-	case <-exit:
-		return
-	}
-}
 
-func (self *manager) runForever() {
 	for _, s := range self.supervisors {
-		s.Start()
+		s.start()
 	}
 
 	var e error
 	for _, s := range self.supervisors {
-		e = s.UntilStarted()
+		e = s.untilStarted()
 		if nil != e {
-			e = fmt.Errorf("start '%v' failed, %v", s.name, e)
+			e = fmt.Errorf("start '%v' failed, %v", s.name(), e)
 			goto end
 		}
 	}
@@ -77,13 +78,13 @@ func (self *manager) runForever() {
 
 end:
 	for _, s := range self.supervisors {
-		s.Stop()
+		s.stop()
 	}
 
 	for _, s := range self.supervisors {
-		err := s.UntilStopped()
+		err := s.untilStopped()
 		if nil != err {
-			fmt.Println(fmt.Sprintf("stop '%v' failed, %v", s.name, err))
+			fmt.Println(fmt.Sprintf("stop '%v' failed, %v", s.name(), err))
 		}
 	}
 

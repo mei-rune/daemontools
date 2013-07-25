@@ -63,3 +63,15 @@ func execWithTimeout(timeout time.Duration, cmd *exec.Cmd) error {
 	}
 	return err
 }
+
+func processExists(pid int) bool {
+	p, e := os.FindProcess(pid)
+	if nil != e {
+		if os.IsPermission(e) {
+			return true
+		}
+		return false
+	}
+	p.Release()
+	return true
+}
