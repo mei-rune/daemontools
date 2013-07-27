@@ -14,7 +14,7 @@ import (
 
 type supervisor_default struct {
 	supervisorBase
-	prompt string
+	success_flag string
 
 	proc_status int32
 	pid         int
@@ -38,7 +38,7 @@ func (self *supervisor_default) stats() map[string]interface{} {
 	res := self.supervisorBase.stats()
 
 	res["pid"] = pid
-	res["prompt"] = self.prompt
+	res["success_flag"] = self.success_flag
 	res["status"] = srv_status + " " + proc_status
 	res["srv_status"] = srv_status
 	res["proc_status"] = proc_status
@@ -230,7 +230,7 @@ func (self *supervisor_default) loop() {
 	}()
 
 	self.logString("[sys] ==================== srv  start ====================\r\n")
-	for i := 0; i < self.repected; i++ {
+	for i := 0; i < self.retries; i++ {
 		self.run(func() {
 			self.casStatus(SRV_STARTING, SRV_RUNNING)
 		})
@@ -275,7 +275,7 @@ func (self *supervisor_default) run(cb func()) {
 	atomic.StoreInt32(&self.proc_status, PROC_STARTING)
 
 	cmd := self.start_cmd.command()
-	if 0 == len(self.prompt) {
+	if 0 == len(self.success_flag) {
 		if *is_print {
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
@@ -287,7 +287,7 @@ func (self *supervisor_default) run(cb func()) {
 			cb()
 		}
 	} else {
-		wrapped := wrap(self.out, []byte(self.prompt), cb)
+		wrapped := wrap(self.out, []byte(self.success_flag), cb)
 		cmd.Stdout = wrapped
 		cmd.Stderr = wrapped
 	}

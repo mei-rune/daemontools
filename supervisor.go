@@ -86,7 +86,7 @@ type supervisor interface {
 
 type supervisorBase struct {
 	proc_name   string
-	repected    int
+	retries     int
 	killTimeout time.Duration
 	start_cmd   *command
 	stop_cmd    *command
@@ -104,7 +104,7 @@ func (self *supervisorBase) stats() map[string]interface{} {
 	is_started := status != SRV_INIT || status != SRV_STOPPING
 	return map[string]interface{}{
 		"name":         self.proc_name,
-		"repected":     self.repected,
+		"retries":      self.retries,
 		"kill_timeout": self.killTimeout,
 		"owned":        true,
 		"is_started":   is_started,

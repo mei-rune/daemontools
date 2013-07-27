@@ -15,15 +15,15 @@ import (
 )
 
 func TestStart(t *testing.T) {
-	prompt := "test_starts"
+	success_flag := "test_starts"
 	wd, _ := os.Getwd()
-	s := &supervisor_default{prompt: prompt,
+	s := &supervisor_default{success_flag: success_flag,
 		supervisorBase: supervisorBase{proc_name: "test_start",
-			repected:    5,
+			retries:     5,
 			killTimeout: time.Second,
 			//out:         os.Stdout,
 			start_cmd: &command{proc: "go",
-				arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), prompt}}}}
+				arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), success_flag}}}}
 
 	s.start()
 
@@ -39,11 +39,11 @@ func TestStart(t *testing.T) {
 }
 
 func TestStartWithoutPrompt(t *testing.T) {
-	prompt := ""
+	success_flag := ""
 	wd, _ := os.Getwd()
-	s := &supervisor_default{prompt: prompt,
+	s := &supervisor_default{success_flag: success_flag,
 		supervisorBase: supervisorBase{proc_name: "test_start",
-			repected:    5,
+			retries:     5,
 			killTimeout: time.Second,
 			//out:         os.Stdout,
 			start_cmd: &command{proc: "go",
@@ -63,15 +63,15 @@ func TestStartWithoutPrompt(t *testing.T) {
 }
 
 func TestStartWithPrompt(t *testing.T) {
-	prompt := "TestStartWithPrompt"
+	success_flag := "TestStartWithPrompt"
 	wd, _ := os.Getwd()
-	s := &supervisor_default{prompt: prompt,
+	s := &supervisor_default{success_flag: success_flag,
 		supervisorBase: supervisorBase{proc_name: "test_start",
-			repected:    5,
+			retries:     5,
 			killTimeout: time.Second,
 			//out:         os.Stdout,
 			start_cmd: &command{proc: "go",
-				arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), prompt}}}}
+				arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), success_flag}}}}
 
 	s.start()
 
@@ -87,16 +87,16 @@ func TestStartWithPrompt(t *testing.T) {
 }
 
 func TestStartWithRedirect(t *testing.T) {
-	prompt := "TestStartWithRedirect"
+	success_flag := "TestStartWithRedirect"
 	var buffer bytes.Buffer
 	wd, _ := os.Getwd()
-	s := &supervisor_default{prompt: prompt,
+	s := &supervisor_default{success_flag: success_flag,
 		supervisorBase: supervisorBase{proc_name: "test_start",
-			repected:    5,
+			retries:     5,
 			killTimeout: time.Second,
 			out:         &buffer,
 			start_cmd: &command{proc: "go",
-				arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), prompt}}}}
+				arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), success_flag}}}}
 
 	s.start()
 
@@ -113,16 +113,16 @@ func TestStartWithRedirect(t *testing.T) {
 }
 
 func TestStartWithEcho(t *testing.T) {
-	prompt := "TestStartWithEcho"
+	success_flag := "TestStartWithEcho"
 	var buffer bytes.Buffer
 	wd, _ := os.Getwd()
-	s := &supervisor_default{prompt: prompt,
+	s := &supervisor_default{success_flag: success_flag,
 		supervisorBase: supervisorBase{proc_name: "test_start",
-			repected:    5,
+			retries:     5,
 			killTimeout: time.Second,
 			out:         &buffer,
 			start_cmd: &command{proc: "go",
-				arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), prompt}}}}
+				arguments: []string{"run", filepath.Join(wd, "mock", "helloworld.go"), success_flag}}}}
 
 	s.start()
 
@@ -140,18 +140,18 @@ func TestStartWithEcho(t *testing.T) {
 	if nil != e {
 		t.Error(e)
 		t.Error(ss)
-	} else if !strings.Contains(ss, prompt) {
+	} else if !strings.Contains(ss, success_flag) {
 		t.Error(ss)
 	}
 }
 
 func TestStartFailed(t *testing.T) {
-	prompt := "TestStartFailed"
+	success_flag := "TestStartFailed"
 	var buffer bytes.Buffer
 	wd, _ := os.Getwd()
-	s := &supervisor_default{prompt: prompt,
+	s := &supervisor_default{success_flag: success_flag,
 		supervisorBase: supervisorBase{proc_name: "test_start",
-			repected:    5,
+			retries:     5,
 			killTimeout: time.Second,
 			out:         &buffer,
 			start_cmd: &command{proc: "go",
@@ -168,7 +168,7 @@ func TestStartFailed(t *testing.T) {
 	e := s.untilStarted()
 	if nil == e {
 		t.Error(ss)
-	} else if strings.Contains(ss, prompt) {
+	} else if strings.Contains(ss, success_flag) {
 		t.Error(ss)
 	} else if strings.Contains(ss, "asdfsdf") {
 		t.Error(ss)
@@ -201,12 +201,12 @@ func TestStartFailedWithRepectedCount(t *testing.T) {
 		}
 	}()
 
-	prompt := "TestStartFailedWithRepectedCount"
+	success_flag := "TestStartFailedWithRepectedCount"
 	var buffer bytes.Buffer
 	wd, _ := os.Getwd()
-	s := &supervisor_default{prompt: prompt,
+	s := &supervisor_default{success_flag: success_flag,
 		supervisorBase: supervisorBase{proc_name: "test_start",
-			repected:    5,
+			retries:     5,
 			killTimeout: time.Second,
 			out:         &buffer,
 			start_cmd: &command{proc: "go",
@@ -223,9 +223,9 @@ func TestStartFailedWithRepectedCount(t *testing.T) {
 	ss := buffer.String()
 	if nil == e {
 		t.Error(ss)
-	} else if strings.Contains(ss, prompt) {
+	} else if strings.Contains(ss, success_flag) {
 		t.Error(ss)
-	} else if s.repected != int(atomic.LoadInt32(&count)) {
+	} else if s.retries != int(atomic.LoadInt32(&count)) {
 		t.Errorf("restart count  '%d' is not 5", atomic.LoadInt32(&count))
 		t.Error(ss)
 	}
@@ -234,12 +234,12 @@ func TestStartFailedWithRepectedCount(t *testing.T) {
 
 func TestStopByCmd(t *testing.T) {
 	port := ":9483"
-	prompt := "listen ok"
+	success_flag := "listen ok"
 	var buffer bytes.Buffer
 	wd, _ := os.Getwd()
-	s := &supervisor_default{prompt: prompt,
+	s := &supervisor_default{success_flag: success_flag,
 		supervisorBase: supervisorBase{proc_name: "test_start",
-			repected:    5,
+			retries:     5,
 			killTimeout: 3 * time.Second,
 			out:         &buffer,
 			start_cmd: &command{proc: "go",
@@ -276,12 +276,12 @@ func TestStopByCmd(t *testing.T) {
 }
 
 func TestStopByNoStop(t *testing.T) {
-	prompt := "ok"
+	success_flag := "ok"
 	var buffer bytes.Buffer
 	wd, _ := os.Getwd()
-	s := &supervisor_default{prompt: prompt,
+	s := &supervisor_default{success_flag: success_flag,
 		supervisorBase: supervisorBase{proc_name: "test_start",
-			repected:    5,
+			retries:     5,
 			killTimeout: 3 * time.Second,
 			out:         &buffer,
 			start_cmd: &command{proc: "go",
@@ -316,12 +316,12 @@ func TestStopByNoStop(t *testing.T) {
 }
 
 func TestStopByConsole(t *testing.T) {
-	prompt := "ok"
+	success_flag := "ok"
 	var buffer bytes.Buffer
 	wd, _ := os.Getwd()
-	s := &supervisor_default{prompt: prompt,
+	s := &supervisor_default{success_flag: success_flag,
 		supervisorBase: supervisorBase{proc_name: "test_start",
-			repected:    5,
+			retries:     5,
 			killTimeout: 3 * time.Second,
 			out:         &buffer,
 			start_cmd: &command{proc: "go",
@@ -362,12 +362,12 @@ func TestStopByConsole(t *testing.T) {
 }
 
 func TestStopByConsoleWithErrorExec(t *testing.T) {
-	prompt := "ok"
+	success_flag := "ok"
 	var buffer bytes.Buffer
 	wd, _ := os.Getwd()
-	s := &supervisor_default{prompt: prompt,
+	s := &supervisor_default{success_flag: success_flag,
 		supervisorBase: supervisorBase{proc_name: "test_start",
-			repected:    5,
+			retries:     5,
 			killTimeout: 3 * time.Second,
 			out:         &buffer,
 			start_cmd: &command{proc: "go",
@@ -404,12 +404,12 @@ func TestStopByConsoleWithErrorExec(t *testing.T) {
 }
 
 func TestStopByKill(t *testing.T) {
-	prompt := "ok"
+	success_flag := "ok"
 	var buffer bytes.Buffer
 	wd, _ := os.Getwd()
-	s := &supervisor_default{prompt: prompt,
+	s := &supervisor_default{success_flag: success_flag,
 		supervisorBase: supervisorBase{proc_name: "test_start",
-			repected:    5,
+			retries:     5,
 			killTimeout: 3 * time.Second,
 			out:         &buffer,
 			start_cmd: &command{proc: "go",

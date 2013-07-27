@@ -63,14 +63,24 @@ func Main() {
 		return
 	}
 
-	if "" == *root_dir {
+	if "." == *root_dir {
 		*root_dir = abs(filepath.Dir(os.Args[0]))
+		dirs := []string{abs(filepath.Dir(os.Args[0])), filepath.Join(abs(filepath.Dir(os.Args[0])), "..")}
+		for _, s := range dirs {
+			if dirExist(filepath.Join(s, "conf")) {
+				*root_dir = s
+				break
+			}
+		}
 	} else {
 		*root_dir = abs(*root_dir)
 	}
+
 	if !dirExist(*root_dir) {
-		fmt.Println("root directory '", *root_dir, "' is not exist.")
+		fmt.Println("root directory '" + *root_dir + "' is not exist.")
 		return
+	} else {
+		fmt.Println("root directory is '" + *root_dir + "'.")
 	}
 
 	e := os.Chdir(*root_dir)
@@ -148,7 +158,11 @@ func loadConfigs(root, file string) (*manager, error) {
 	patterns = append(patterns, filepath.Clean(abs(filepath.Join(root, "autostart_*.conf"))),
 		filepath.Clean(abs(filepath.Join(root, "*_autostart.conf"))),
 		filepath.Clean(abs(filepath.Join(root, "*-autostart.conf"))),
-		filepath.Clean(abs(filepath.Join(root, "autostart-*.conf"))))
+		filepath.Clean(abs(filepath.Join(root, "autostart-*.conf"))),
+		filepath.Clean(abs(filepath.Join(root, "*/*_autostart.conf"))),
+		filepath.Clean(abs(filepath.Join(root, "*/*-autostart.conf"))),
+		filepath.Clean(abs(filepath.Join(root, "*/autostart-*.conf"))),
+		filepath.Clean(abs(filepath.Join(root, "*/autostart_*.conf"))))
 
 	supervisors := make([]supervisor, 0, 10)
 	for _, pattern := range patterns {
@@ -253,21 +267,21 @@ func loadConfig(file string, args map[string]interface{}, supervisors []supervis
 
 func loadSupervisor(arguments []map[string]interface{}, supervisors []supervisor) ([]supervisor, error) {
 	// type supervisor struct {
-	//   name        string
-	//   prompt      string
-	//   repected    int
-	//   killTimeout time.Duration
-	//   start       *command
-	//   stop        *command
+	//   name              string
+	//   success_flag      string
+	//   retries           int
+	//   killTimeout       time.Duration
+	//   start             *command
+	//   stop              *command
 	// }
 
 	name := stringWithArguments(arguments, "name", "")
 	if 0 == len(name) {
 		return nil, errors.New("'name' is missing.")
 	}
-	repected := intWithArguments(arguments, "repected", 5)
-	if repected <= 0 {
-		return nil, errors.New("'repected' must is greate 0.")
+	retries := intWithArguments(arguments, "retries", 5)
+	if retries <= 0 {
+		return nil, errors.New("'retries' must is greate 0.")
 	}
 	killTimeout := durationWithArguments(arguments, "killTimeout", 5*time.Second)
 	if killTimeout <= 0*time.Second {
@@ -304,7 +318,7 @@ func loadSupervisor(arguments []map[string]interface{}, supervisors []supervisor
 		}
 	}
 
-	prompt := stringWithArguments(arguments, "prompt", "")
+	success_flag := stringWithArguments(arguments, "success_flag", "")
 	pidfile := stringWithArguments(arguments, "pidfile", "")
 	if 0 != len(pidfile) {
 
@@ -320,15 +334,15 @@ func loadSupervisor(arguments []map[string]interface{}, supervisors []supervisor
 		pidfile = filepath.Clean(abs(pidfile))
 		supervisors = append(supervisors, &supervisorWithPidfile{pidfile: pidfile,
 			supervisorBase: supervisorBase{proc_name: name,
-				repected:    repected,
+				retries:     retries,
 				killTimeout: killTimeout,
 				start_cmd:   start,
 				stop_cmd:    stop}})
 
 	} else {
-		supervisors = append(supervisors, &supervisor_default{prompt: prompt,
+		supervisors = append(supervisors, &supervisor_default{success_flag: success_flag,
 			supervisorBase: supervisorBase{proc_name: name,
-				repected:    repected,
+				retries:     retries,
 				killTimeout: killTimeout,
 				start_cmd:   start,
 				stop_cmd:    stop}})

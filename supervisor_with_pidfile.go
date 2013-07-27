@@ -64,7 +64,7 @@ func (self *supervisorWithPidfile) start() {
 	}()
 
 	self.logString("[sys] ==================== srv  start ====================\r\n")
-	for i := 0; i < self.repected; i++ {
+	for i := 0; i < self.retries; i++ {
 		self.run(func() {
 			if atomic.CompareAndSwapInt32(&self.srv_status, SRV_STARTING, SRV_RUNNING) {
 				atomic.StoreInt32(&self.owner, 1)
