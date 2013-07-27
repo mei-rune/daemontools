@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -353,7 +354,78 @@ func loadCommand(args []map[string]interface{}) (*command, error) {
 	if 0 == len(directory) && 1 < len(args) {
 		directory = stringWithArguments(args[1:], "root_dir", "")
 	}
+
+	switch strings.ToLower(filepath.Base(proc)) {
+	case "java", "java.exe":
+		var e error
+		arguments, e = loadJavaArguments(arguments, args)
+		if nil != e {
+			return nil, e
+		}
+	}
+
 	return &command{proc: proc, arguments: arguments, environments: environments, directory: directory}, nil
+}
+
+func loadJavaArguments(arguments []string, args []map[string]interface{}) ([]string, error) {
+
+	var results []string
+	cp := stringsWithArguments(args, "java_classpath", ";", nil, false)
+	if nil != cp && 0 != len(cp) {
+		var classpath []string
+		for _, p := range cp {
+			if 0 == len(p) {
+				continue
+			}
+			files, e := filepath.Glob(p)
+			if nil != e {
+				return nil, e
+			}
+			if nil == files {
+				continue
+			}
+
+			classpath = append(classpath, files...)
+		}
+
+		if nil != classpath && 0 == len(classpath) {
+			if "windows" == runtime.GOOS {
+				results = append(results, "-cp", strings.Join(classpath, ";"))
+			} else {
+				results = append(results, "-cp", strings.Join(classpath, ";"))
+			}
+		}
+	}
+
+	debug := stringWithArguments(args, "java_debug", "")
+	if 0 != len(debug) {
+		suspend := boolWithArguments(args, "java_debug_suspend", false)
+		if suspend {
+			results = append(results, "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
+		} else {
+			results = append(results, "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005")
+		}
+	}
+
+	options := stringsWithArguments(args, "java_options", ",", nil, false)
+	if nil != options && 0 != len(options) {
+		results = append(results, options...)
+	}
+
+	class := stringWithArguments(args, "java_class", "")
+	if 0 != len(class) {
+		results = append(results, class)
+	}
+
+	jar := stringWithArguments(args, "java_jar", "")
+	if 0 != len(jar) {
+		results = append(results, jar)
+	}
+
+	if nil != arguments && 0 != len(arguments) {
+		return append(results, arguments...), nil
+	}
+	return results, nil
 }
 
 func loadDefault(root, file string) map[string]interface{} {

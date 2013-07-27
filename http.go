@@ -2,7 +2,6 @@ package daemontools
 
 import (
 	_ "expvar"
-	"html"
 	"html/template"
 	"io"
 	"log"
@@ -96,18 +95,6 @@ func indexHandler(w http.ResponseWriter, r *http.Request, backend *manager) {
 	}
 	ctx := backend.Stats()
 	t.Execute(w, ctx)
-}
-
-func indexHandlerWithMessage(w http.ResponseWriter, r *http.Request, level, message string) {
-	io.WriteString(w, index_html_1)
-
-	io.WriteString(w, "<div class=\"alert alert-")
-	io.WriteString(w, level)
-	io.WriteString(w, "\"> ")
-	io.WriteString(w, html.EscapeString(message))
-	io.WriteString(w, " </div>")
-
-	io.WriteString(w, index_html_2)
 }
 
 // func allHandler(w http.ResponseWriter, r *http.Request, backend *manager) {
