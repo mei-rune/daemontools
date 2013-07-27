@@ -81,7 +81,7 @@ type supervisor interface {
 	untilStopped() error
 
 	setOutput(out io.Writer)
-	stats() interface{}
+	stats() map[string]interface{}
 }
 
 type supervisorBase struct {
@@ -99,12 +99,16 @@ func (self *supervisorBase) name() string {
 	return self.proc_name
 }
 
-func (self *supervisorBase) stats() interface{} {
+func (self *supervisorBase) stats() map[string]interface{} {
+	status := atomic.LoadInt32(&self.srv_status)
+	is_started := status != SRV_INIT || status != SRV_STOPPING
 	return map[string]interface{}{
 		"name":         self.proc_name,
 		"repected":     self.repected,
 		"kill_timeout": self.killTimeout,
-		"srv_status":   srvString(atomic.LoadInt32(&self.srv_status))}
+		"owned":        true,
+		"is_started":   is_started,
+		"srv_status":   srvString(status)}
 }
 
 func (self *supervisorBase) setOutput(out io.Writer) {

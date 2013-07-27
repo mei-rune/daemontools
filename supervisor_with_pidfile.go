@@ -20,13 +20,15 @@ type supervisorWithPidfile struct {
 	pidfile    string
 }
 
-func (self *supervisorWithPidfile) stats() interface{} {
-	return map[string]interface{}{
-		"name":         self.name(),
-		"pidfile":      self.pidfile,
-		"repected":     self.repected,
-		"kill_timeout": self.killTimeout,
-		"srv_status":   self.status()}
+func (self *supervisorWithPidfile) stats() map[string]interface{} {
+	srv_status := self.status()
+	res := self.supervisorBase.stats()
+	res["pidfile"] = self.pidfile
+	res["status"] = srv_status
+
+	res["owned"] = (1 == atomic.LoadInt32(&self.owner))
+	res["srv_status"] = srv_status
+	return res
 }
 
 func (self *supervisorWithPidfile) status() string {

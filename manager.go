@@ -1,13 +1,7 @@
 package daemontools
 
 import (
-	"log"
-	// "bufio"
-	_ "expvar"
 	"fmt"
-	"net/http"
-	_ "net/http/pprof"
-	//"net/textproto"
 	"os"
 	"os/signal"
 )
@@ -43,8 +37,9 @@ func (self *manager) rpel() {
 
 func (self *manager) runForever() {
 	go func() {
-		log.Println("[daemontools] serving at '" + *listenAddress + "'")
-		http.ListenAndServe(*listenAddress, nil)
+		httpServe(self)
+		//log.Println("[daemontools] serving at '" + *listenAddress + "'")
+		//http.ListenAndServe(*listenAddress, nil)
 		// reader := textproto.NewReader(bufio.NewReader(os.Stdin))
 		// for {
 		// 	s, e := reader.ReadLine()

@@ -25,14 +25,24 @@ type supervisor_default struct {
 	once sync.Once
 }
 
-func (self *supervisor_default) stats() interface{} {
-	return map[string]interface{}{
-		"name":         self.name(),
-		"prompt":       self.prompt,
-		"repected":     self.repected,
-		"kill_timeout": self.killTimeout,
-		"srv_status":   srvString(atomic.LoadInt32(&self.srv_status)),
-		"proc_status":  procString(atomic.LoadInt32(&self.proc_status))}
+func (self *supervisor_default) stats() map[string]interface{} {
+	self.init()
+	pid := 0
+	self.cond.L.Lock()
+	pid = self.pid
+	self.cond.L.Unlock()
+
+	srv_status := srvString(atomic.LoadInt32(&self.srv_status))
+	proc_status := procString(atomic.LoadInt32(&self.proc_status))
+
+	res := self.supervisorBase.stats()
+
+	res["pid"] = pid
+	res["prompt"] = self.prompt
+	res["status"] = srv_status + " " + proc_status
+	res["srv_status"] = srv_status
+	res["proc_status"] = proc_status
+	return res
 }
 
 func (self *supervisor_default) casStatus(old_status, new_status int32) bool {
@@ -262,6 +272,7 @@ func (self *supervisor_default) run(cb func()) {
 	}()
 
 	self.logString("[sys] -------------------- proc start --------------------\r\n")
+	atomic.StoreInt32(&self.proc_status, PROC_STARTING)
 
 	cmd := self.start_cmd.command()
 	if 0 == len(self.prompt) {
@@ -294,6 +305,7 @@ func (self *supervisor_default) run(cb func()) {
 		self.logString(fmt.Sprintf("[sys] start process failed - %v\r\n", e))
 		return
 	}
+	atomic.StoreInt32(&self.proc_status, PROC_RUNNING)
 
 	self.cond.L.Lock()
 	self.stdin = in
