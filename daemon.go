@@ -246,7 +246,7 @@ func loadConfig(file string, args map[string]interface{}, supervisors []supervis
 	switch value := v.(type) {
 	case map[string]interface{}:
 		arguments := []map[string]interface{}{value, args}
-		return loadSupervisor(arguments, supervisors)
+		return loadSupervisor(file, arguments, supervisors)
 	case []interface{}:
 		for idx, o := range value {
 			attributes, ok := o.(map[string]interface{})
@@ -255,7 +255,7 @@ func loadConfig(file string, args map[string]interface{}, supervisors []supervis
 			}
 
 			arguments := []map[string]interface{}{attributes, args}
-			supervisors, e = loadSupervisor(arguments, supervisors)
+			supervisors, e = loadSupervisor(file, arguments, supervisors)
 			if nil != e {
 				return nil, e
 			}
@@ -265,7 +265,7 @@ func loadConfig(file string, args map[string]interface{}, supervisors []supervis
 	return nil, fmt.Errorf("it is not a map or array - %T", v)
 }
 
-func loadSupervisor(arguments []map[string]interface{}, supervisors []supervisor) ([]supervisor, error) {
+func loadSupervisor(file string, arguments []map[string]interface{}, supervisors []supervisor) ([]supervisor, error) {
 	// type supervisor struct {
 	//   name              string
 	//   success_flag      string
@@ -319,9 +319,15 @@ func loadSupervisor(arguments []map[string]interface{}, supervisors []supervisor
 	}
 
 	success_flag := stringWithArguments(arguments, "success_flag", "")
+	if 0 == len(success_flag) {
+		retries1 := intWithDefault(arguments[0], "retries", 0)
+		if retries1 > 0 {
+			fmt.Println("[warn] retries will ignore while success_flag is missing in '" + name + "' at '" + file + "'.")
+		}
+	}
+
 	pidfile := stringWithArguments(arguments, "pidfile", "")
 	if 0 != len(pidfile) {
-
 		if nil != stop {
 			switch stop.proc {
 			case "__kill___", "":

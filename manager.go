@@ -69,6 +69,8 @@ func (self *manager) runForever() {
 		}
 	}
 
+	fmt.Println("[sys] start successfully.")
+
 	self.rpel()
 
 end:
