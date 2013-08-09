@@ -38,22 +38,6 @@ func (self *manager) rpel() {
 func (self *manager) runForever() {
 	go func() {
 		httpServe(self)
-		//log.Println("[daemontools] serving at '" + *listenAddress + "'")
-		//http.ListenAndServe(*listenAddress, nil)
-		// reader := textproto.NewReader(bufio.NewReader(os.Stdin))
-		// for {
-		// 	s, e := reader.ReadLine()
-		// 	if nil != e {
-		// 		return
-		// 	}
-
-		// 	if "exit" == s {
-		// 		exit <- s
-		// 		break
-		// 	}
-
-		// 	runCommand(s)
-		// }
 	}()
 
 	for _, s := range self.supervisors {

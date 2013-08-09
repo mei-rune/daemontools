@@ -106,13 +106,13 @@ func (self *supervisor_default) start() {
 
 func (self *supervisor_default) stop() {
 	self.init()
-
+	self.logString(time.Now().String() + " [sys]swithing to '" + srvString(atomic.LoadInt32(&self.srv_status)) + "'\r\n")
 	if !self.casStatus(SRV_RUNNING, SRV_STOPPING) &&
 		!self.casStatus(SRV_STARTING, SRV_STOPPING) {
 		return
 	}
-
-	self.interrupt()
+	self.logString(time.Now().String() + " [sys]swith to '" + srvString(atomic.LoadInt32(&self.srv_status)) + "'\r\n")
+	go self.interrupt()
 }
 
 func (self *supervisor_default) interrupt() {
@@ -122,6 +122,7 @@ func (self *supervisor_default) interrupt() {
 	self.cond.L.Unlock()
 
 	if 0 == pid {
+		self.logString(time.Now().String() + " [sys] pid = 0\r\n")
 		return
 	}
 	var ok bool
@@ -237,18 +238,25 @@ func (self *supervisor_default) loop() {
 		if SRV_STARTING != atomic.LoadInt32(&self.srv_status) {
 			break
 		}
+
+		self.logString(time.Now().String() + " [sys]current status is '" + srvString(atomic.LoadInt32(&self.srv_status)) + "'\r\n")
 	}
 
 	for SRV_RUNNING == atomic.LoadInt32(&self.srv_status) {
-		time.Sleep(time.Second)
+		self.logString(time.Now().String() + " [sys]current status is '" + srvString(atomic.LoadInt32(&self.srv_status)) + "'\r\n")
+		time.Sleep(2 * time.Second)
 		self.run(nil)
 	}
 }
 
 func (self *supervisor_default) run(cb func()) {
+	self.cond.L.Lock()
+	is_locked := true
 	defer func() {
 
-		self.cond.L.Lock()
+		if !is_locked {
+			self.cond.L.Lock()
+		}
 		self.stdin = nil
 		self.pid = 0
 		self.cond.L.Unlock()
@@ -270,6 +278,10 @@ func (self *supervisor_default) run(cb func()) {
 		}
 		self.logString("[sys] --------------------  proc end  --------------------\r\n")
 	}()
+
+	if st := atomic.LoadInt32(&self.srv_status); SRV_RUNNING != st && SRV_STARTING != st {
+		return
+	}
 
 	self.logString("[sys] -------------------- proc start --------------------\r\n")
 	atomic.StoreInt32(&self.proc_status, PROC_STARTING)
@@ -301,16 +313,25 @@ func (self *supervisor_default) run(cb func()) {
 		}
 	}
 
+	self.logString(fmt.Sprintf("[sys] %v\r\n", cmd.Path))
+	for idx, s := range cmd.Args {
+		if 0 == idx {
+			continue
+		}
+		self.logString(fmt.Sprintf("[sys] \t\t%v\r\n", s))
+	}
+
 	if e = cmd.Start(); nil != e {
 		self.logString(fmt.Sprintf("[sys] start process failed - %v\r\n", e))
 		return
 	}
 	atomic.StoreInt32(&self.proc_status, PROC_RUNNING)
 
-	self.cond.L.Lock()
 	self.stdin = in
 	self.pid = cmd.Process.Pid
 	self.cond.L.Unlock()
+	is_locked = false
+
 	if e = cmd.Wait(); nil != e {
 		self.logString(fmt.Sprintf("[sys] wait process failed - %v\r\n", e))
 		return

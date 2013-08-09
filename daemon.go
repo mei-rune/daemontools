@@ -127,6 +127,7 @@ func Main() {
 
 	if 0 == len(*java_path) {
 		*java_path = search_java_home(*root_dir)
+		fmt.Println("[warn] java is", *java_path)
 	}
 
 	mgr, e := loadConfigs(*root_dir, file)
@@ -175,7 +176,7 @@ func Main() {
 
 func search_java_home(root string) string {
 	java_execute := "java.exe"
-	if "windows" == runtime.GOOS {
+	if "windows" != runtime.GOOS {
 		java_execute = "java"
 	}
 
@@ -193,7 +194,9 @@ func search_java_home(root string) string {
 }
 
 func execute(pa string) error {
-	return exec.Command(pa).Run()
+	cmd := exec.Command(pa)
+	cmd.Env = []string{"PROCMGR_ID=" + os.Args[0]}
+	return cmd.Run()
 }
 
 func loadConfigs(root, file string) (*manager, error) {
@@ -477,11 +480,11 @@ func loadJavaArguments(arguments []string, args []map[string]interface{}) ([]str
 			classpath = append(classpath, files...)
 		}
 
-		if nil != classpath && 0 == len(classpath) {
+		if nil != classpath && 0 != len(classpath) {
 			if "windows" == runtime.GOOS {
 				results = append(results, "-cp", strings.Join(classpath, ";"))
 			} else {
-				results = append(results, "-cp", strings.Join(classpath, ";"))
+				results = append(results, "-cp", strings.Join(classpath, ":"))
 			}
 		}
 	}
