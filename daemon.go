@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -20,6 +21,8 @@ var (
 	root_dir      = flag.String("root", ".", "the root directory")
 	config_file   = flag.String("config", "./<program_name>.conf", "the config file path")
 	listenAddress = flag.String("listen", ":9087", "the address of http")
+	pre_start     = flag.String("pre_start", "pre_start.bat", "the name of pre start")
+	post_finish   = flag.String("post_finish", "post_finish.bat", "the name of post finish")
 
 	manager_exporter = &Exporter{}
 )
@@ -129,7 +132,44 @@ func Main() {
 
 	expvar.Publish("supervisors", manager_exporter)
 	manager_exporter.Var = mgr
+
+	pre_start_path := filepath.Join(*root_dir, *pre_start)
+	if "pre_start.bat" == *pre_start {
+		if "windows" != runtime.GOOS {
+			pre_start_path = filepath.Join(*root_dir, "pre_start.sh")
+		}
+	}
+
+	post_finish_path := filepath.Join(*root_dir, *post_finish)
+	if "post_finish.bat" == *post_finish {
+		if "windows" != runtime.GOOS {
+			post_finish_path = filepath.Join(*root_dir, "post_finish.sh")
+		}
+	}
+
+	if fileExist(pre_start_path) {
+		fmt.Println("execute '" + pre_start_path + "'")
+		e = execute(pre_start_path)
+		if nil != e {
+			fmt.Println(e)
+			return
+		}
+	}
+
 	mgr.runForever()
+
+	if fileExist(post_finish_path) {
+		fmt.Println("execute '" + post_finish_path + "'")
+		e = execute(post_finish_path)
+		if nil != e {
+			fmt.Println(e)
+			return
+		}
+	}
+}
+
+func execute(pa string) error {
+	return exec.Command(pa).Run()
 }
 
 func loadConfigs(root, file string) (*manager, error) {
@@ -218,6 +258,7 @@ func loadConfigs(root, file string) (*manager, error) {
 		}
 		s.setOutput(out)
 	}
+
 	return &manager{supervisors: supervisors}, nil
 }
 
