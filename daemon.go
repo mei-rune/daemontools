@@ -23,6 +23,7 @@ var (
 	listenAddress = flag.String("listen", ":9087", "the address of http")
 	pre_start     = flag.String("pre_start", "pre_start.bat", "the name of pre start")
 	post_finish   = flag.String("post_finish", "post_finish.bat", "the name of post finish")
+	java_path     = flag.String("java_path", "", "the path of java, should auto search if it is empty")
 
 	manager_exporter = &Exporter{}
 )
@@ -124,6 +125,10 @@ func Main() {
 		}
 	}
 
+	if 0 == len(*java_path) {
+		*java_path = search_java_home(*root_dir)
+	}
+
 	mgr, e := loadConfigs(*root_dir, file)
 	if nil != e {
 		fmt.Println(e)
@@ -166,6 +171,25 @@ func Main() {
 			return
 		}
 	}
+}
+
+func search_java_home(root string) string {
+	java_execute := "java.exe"
+	if "windows" == runtime.GOOS {
+		java_execute = "java"
+	}
+
+	jp := filepath.Join(root, "runtime_env/jdk/bin", java_execute)
+	if fileExist(jp) {
+		return jp
+	}
+
+	ss, _ := filepath.Glob(filepath.Join(root, "**", "java.exe"))
+	if nil != ss && 0 != len(ss) {
+		return ss[0]
+	}
+
+	return java_execute
 }
 
 func execute(pa string) error {
@@ -423,6 +447,10 @@ func loadCommand(args []map[string]interface{}) (*command, error) {
 		if nil != e {
 			return nil, e
 		}
+
+		if "java" == proc || "java.exe" == proc {
+			proc = *java_path
+		}
 	}
 
 	return &command{proc: proc, arguments: arguments, environments: environments, directory: directory}, nil
@@ -492,6 +520,7 @@ func loadJavaArguments(arguments []string, args []map[string]interface{}) ([]str
 func loadDefault(root, file string) map[string]interface{} {
 	return map[string]interface{}{"root_dir": root,
 		"config_file": file,
+		"java":        *java_path,
 		"os":          runtime.GOOS,
 		"arch":        runtime.GOARCH}
 }
@@ -513,6 +542,10 @@ func loadProperties(root, file string) (map[string]interface{}, error) {
 	e = json.Unmarshal(buffer.Bytes(), &arguments)
 	if nil != e {
 		return nil, errors.New("ummarshal config failed, " + e.Error())
+	}
+
+	if _, ok := arguments["java"]; !ok {
+		arguments["java"] = *java_path
 	}
 
 	return arguments, nil
