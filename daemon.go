@@ -195,7 +195,12 @@ func search_java_home(root string) string {
 
 func execute(pa string) error {
 	cmd := exec.Command(pa)
-	cmd.Env = []string{"PROCMGR_ID=" + os.Args[0]}
+
+	os_env := os.Environ()
+	environments := make([]string, 0, 1+len(os_env))
+	environments = append(environments, os_env...)
+	environments = append(environments, "PROCMGR_ID="+os.Args[0])
+	cmd.Env = environments
 	return cmd.Run()
 }
 
