@@ -157,7 +157,7 @@ func Main() {
 		fmt.Println("execute '" + pre_start_path + "'")
 		e = execute(pre_start_path)
 		if nil != e {
-			fmt.Println(e)
+			fmt.Println("execute 'pre_start' failed,", e)
 			return
 		}
 	}
@@ -168,7 +168,7 @@ func Main() {
 		fmt.Println("execute '" + post_finish_path + "'")
 		e = execute(post_finish_path)
 		if nil != e {
-			fmt.Println(e)
+			fmt.Println("execute 'post_finish' failed,", e)
 			return
 		}
 	}
