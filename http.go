@@ -8,6 +8,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"path/filepath"
 	"regexp"
 )
 
@@ -32,7 +33,13 @@ var (
 )
 
 func fileHandler(w http.ResponseWriter, r *http.Request, path, default_content string) {
-	name := cd_dir + path
+	var name string
+	if filepath.IsAbs(path) {
+		name = path
+	} else {
+		name = cd_dir + path
+	}
+
 	if fileExist(name) {
 		http.ServeFile(w, r, name)
 		return
