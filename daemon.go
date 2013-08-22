@@ -28,7 +28,7 @@ var (
 	manager_exporter = &Exporter{}
 )
 
-func fileExist(nm string) bool {
+func fileExists(nm string) bool {
 	fs, e := os.Stat(nm)
 	if nil != e {
 		return false
@@ -36,7 +36,7 @@ func fileExist(nm string) bool {
 	return !fs.IsDir()
 }
 
-func dirExist(nm string) bool {
+func dirExists(nm string) bool {
 	fs, e := os.Stat(nm)
 	if nil != e {
 		return false
@@ -71,7 +71,7 @@ func Main() {
 		*root_dir = abs(filepath.Dir(os.Args[0]))
 		dirs := []string{abs(filepath.Dir(os.Args[0])), filepath.Join(abs(filepath.Dir(os.Args[0])), "..")}
 		for _, s := range dirs {
-			if dirExist(filepath.Join(s, "conf")) {
+			if dirExists(filepath.Join(s, "conf")) {
 				*root_dir = s
 				break
 			}
@@ -80,7 +80,7 @@ func Main() {
 		*root_dir = abs(*root_dir)
 	}
 
-	if !dirExist(*root_dir) {
+	if !dirExists(*root_dir) {
 		fmt.Println("root directory '" + *root_dir + "' is not exist.")
 		return
 	} else {
@@ -104,7 +104,7 @@ func Main() {
 
 		found := false
 		for _, nm := range files {
-			if fileExist(nm) {
+			if fileExists(nm) {
 				found = true
 				file = nm
 				break
@@ -119,7 +119,7 @@ func Main() {
 		}
 	} else {
 		file = filepath.Clean(abs(*config_file))
-		if !fileExist(file) {
+		if !fileExists(file) {
 			fmt.Println("config '" + file + "' is not exists.")
 			return
 		}
@@ -153,7 +153,7 @@ func Main() {
 		}
 	}
 
-	if fileExist(pre_start_path) {
+	if fileExists(pre_start_path) {
 		fmt.Println("execute '" + pre_start_path + "'")
 		e = execute(pre_start_path)
 		if nil != e {
@@ -164,7 +164,7 @@ func Main() {
 
 	mgr.runForever()
 
-	if fileExist(post_finish_path) {
+	if fileExists(post_finish_path) {
 		fmt.Println("execute '" + post_finish_path + "'")
 		e = execute(post_finish_path)
 		if nil != e {
@@ -181,7 +181,7 @@ func search_java_home(root string) string {
 	}
 
 	jp := filepath.Join(root, "runtime_env/jdk/bin", java_execute)
-	if fileExist(jp) {
+	if fileExists(jp) {
 		return jp
 	}
 
@@ -269,13 +269,13 @@ func loadConfigs(root, file string) (*manager, error) {
 		logPath}
 
 	for _, s := range logs {
-		if dirExist(s) {
+		if dirExists(s) {
 			logPath = s
 			break
 		}
 	}
 
-	if !dirExist(logPath) {
+	if !dirExists(logPath) {
 		os.Mkdir(logPath, 0660)
 	}
 

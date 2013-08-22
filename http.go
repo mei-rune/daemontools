@@ -40,7 +40,7 @@ func fileHandler(w http.ResponseWriter, r *http.Request, path, default_content s
 		name = cd_dir + path
 	}
 
-	if fileExist(name) {
+	if fileExists(name) {
 		http.ServeFile(w, r, name)
 		return
 	}
@@ -88,7 +88,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request, backend *manager) {
 	var e error
 	var t *template.Template
 	name := cd_dir + "/index.html"
-	if fileExist(name) {
+	if fileExists(name) {
 		t, e = template.ParseFiles(name)
 	} else {
 		t = template.New("default")
