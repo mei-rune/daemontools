@@ -185,6 +185,11 @@ func search_java_home(root string) string {
 		return jp
 	}
 
+	jp = filepath.Join(root, "runtime_env/jre/bin", java_execute)
+	if fileExists(jp) {
+		return jp
+	}
+
 	ss, _ := filepath.Glob(filepath.Join(root, "**", "java.exe"))
 	if nil != ss && 0 != len(ss) {
 		return ss[0]
