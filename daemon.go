@@ -67,6 +67,12 @@ func Main() {
 		return
 	}
 
+	if err := createPidFile(*pidFile); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	defer removePidFile(*pidFile)
+
 	if "." == *root_dir {
 		*root_dir = abs(filepath.Dir(os.Args[0]))
 		dirs := []string{abs(filepath.Dir(os.Args[0])), filepath.Join(abs(filepath.Dir(os.Args[0])), "..")}
