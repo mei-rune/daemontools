@@ -11,8 +11,11 @@ func main() {
 	fmt.Println("ok")
 	reader := textproto.NewReader(bufio.NewReader(os.Stdin))
 	for {
-		ln, _ := reader.ReadLine()
-		fmt.Println(ln)
+		ln, e := reader.ReadLine()
+		if nil != e {
+			fmt.Println("error:", e)
+			return
+		}
 		if os.Args[1] == ln {
 			break
 		}
