@@ -22,6 +22,9 @@ func killByPid(pid int) error {
 	}
 }
 func killProcessAndChildren(pid int, ps map[int]int) error {
+	if -1 == pid {
+		return nil
+	}
 	if nil == ps {
 		var e error
 		ps, e = enumProcesses()

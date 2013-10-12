@@ -1,13 +1,12 @@
 // +build darwin freebsd linux netbsd openbsd
 package daemontools
 
-
 import (
-	"strings"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func Pids() ([]int, error) {
@@ -29,15 +28,14 @@ func Pids() ([]int, error) {
 	return pids, nil
 }
 
-
 // typedef struct statstruct_proc {
 //   int           pid;                      /** The process id. **/
 //   char          exName [_POSIX_PATH_MAX]; /** The filename of the executable **/
-//   char          state; /** 1 **/          /** R is running, S is sleeping, 
+//   char          state; /** 1 **/          /** R is running, S is sleeping,
 // 			                                       D is sleeping in an uninterruptible wait,
 // 			                                       Z is zombie, T is traced or stopped **/
 //   unsigned      euid,                      /** effective user id **/
-//                 egid;                      /** effective group id */					     
+//                 egid;                      /** effective group id */
 //   int           ppid;                     /** The pid of the parent. **/
 //   int           pgrp;                     /** The pgrp of the process. **/
 //   int           session;                  /** The session id of the process. **/
@@ -72,7 +70,7 @@ func Pids() ([]int, error) {
 //   unsigned int  wchan;  /** 33 **/        /** (too long) **/
 //   int		sched, 		  /** scheduler **/
 //                 sched_priority;		  /** scheduler priority **/
-		
+
 // } procinfo;
 
 func GetPPid(pid int) (int, error) {
@@ -103,7 +101,7 @@ func main() {
 		return
 	}
 	for pid, ppid := range pids {
-		fmt.Println(pid, "=",  ppid)
+		fmt.Println(pid, "=", ppid)
 	}
 }
 
@@ -117,9 +115,10 @@ func enumProcesses() (map[int]int, error) {
 	for _, pid := range pids {
 		ppid, err := GetPPid(pid)
 		if err != nil {
-			return nil, err
+			res[pid] = -1
+		} else {
+			res[pid] = ppid
 		}
-		res[pid] = ppid
 	}
 	return res, nil
 }
