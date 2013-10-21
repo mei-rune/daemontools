@@ -210,6 +210,11 @@ func search_java_home(root string) string {
 		return ss[0]
 	}
 
+	jh := os.Getenv("JAVA_HOME")
+	if "" != jh {
+		return filepath.Join(jh, "bin", java_execute)
+	}
+
 	return java_execute
 }
 
