@@ -58,19 +58,24 @@ type command struct {
 }
 
 func (self *command) command() *exec.Cmd {
-	cmd := exec.Command(self.proc, self.arguments...)
-	cmd.Dir = self.directory
-	cmd.Env = os.Environ()
-	if nil != self.environments && 0 != len(self.environments) {
-		os_env := os.Environ()
-		environments := make([]string, 0, len(self.environments)+len(os_env))
-		environments = append(environments, self.environments...)
-		environments = append(environments, os_env...)
-		cmd.Env = environments
-	} else {
-		cmd.Env = os.Environ()
+    switch self.proc {
+	case "__kill___", "", "__signal__", "__console__":
+	    return &exec.Cmd{Path:self.proc}
+	default:
+    	cmd := exec.Command(self.proc, self.arguments...)
+    	cmd.Dir = self.directory
+    	cmd.Env = os.Environ()
+    	if nil != self.environments && 0 != len(self.environments) {
+    		os_env := os.Environ()
+    		environments := make([]string, 0, len(self.environments)+len(os_env))
+    		environments = append(environments, self.environments...)
+    		environments = append(environments, os_env...)
+    		cmd.Env = environments
+    	} else {
+    		cmd.Env = os.Environ()
+    	}
+    	return cmd
 	}
-	return cmd
 }
 
 type supervisor interface {

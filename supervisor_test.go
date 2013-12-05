@@ -387,7 +387,6 @@ func TestStopByConsoleWithErrorExec(t *testing.T) {
 		t.Error(e)
 		return
 	}
-
 	s.stop()
 	e = s.untilStopped()
 
@@ -439,11 +438,11 @@ func TestStopByKill(t *testing.T) {
 		t.Error(ss)
 	}
 
-	// if !strings.Contains(ss, "kill") {
-	// 	t.Error(ss)
-	// }
+	if !strings.Contains(ss, "kill") {
+	 	t.Error(ss)
+	}
 
-	// if strings.Contains(ss, "timed out after ") {
-	// 	t.Error(ss)
-	// }
+	if strings.Contains(ss, "timed out after ") {
+	 	t.Error(ss)
+	}
 }
