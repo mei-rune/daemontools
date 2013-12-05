@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -140,14 +141,10 @@ func (self *supervisor_default) interrupt() {
 			ok, txt = self.killByCmd(pid)
 		}
 
+    	if 0 != len(txt) {
+    	  self.logString(txt)
+    	}
 		if ok {
-			if nil != self.out && 0 != len(txt) {
-				if *is_print {
-					fmt.Print(txt)
-				} else {
-					io.WriteString(self.out, txt)
-				}
-			}
 			return
 		}
 	}
@@ -332,8 +329,17 @@ func (self *supervisor_default) run(cb func()) {
 	self.cond.L.Unlock()
 	is_locked = false
 
-	if e = cmd.Wait(); nil != e {
+    go cmd.Wait()
+    state, e := cmd.Process.Wait();
+	if  nil != e {
 		self.logString(fmt.Sprintf("[sys] wait process failed - %v\r\n", e))
 		return
 	}
+	if !state.Success() {
+	  e = &exec.ExitError{state}
+		self.logString(fmt.Sprintf("[sys] wait process failed - %v\r\n", e))
+      return
+    }
+
+	self.logString("[sys] process is exited\r\n")
 }
