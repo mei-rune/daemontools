@@ -20,7 +20,7 @@ var (
 	is_print      = flag.Bool("print", false, "print search paths while config is not found")
 	root_dir      = flag.String("root", ".", "the root directory")
 	config_file   = flag.String("config", "./<program_name>.conf", "the config file path")
-	listenAddress = flag.String("listen", ":9087", "the address of http")
+	listenAddress = flag.String("listen", ":37070", "the address of http")
 	pre_start     = flag.String("pre_start", "pre_start.bat", "the name of pre start")
 	post_finish   = flag.String("post_finish", "post_finish.bat", "the name of post finish")
 	java_path     = flag.String("java_path", "", "the path of java, should auto search if it is empty")
@@ -529,9 +529,9 @@ func loadJavaArguments(arguments []string, args []map[string]interface{}) ([]str
 	if 0 != len(debug) {
 		suspend := boolWithArguments(args, "java_debug_suspend", false)
 		if suspend {
-			results = append(results, "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
+			results = append(results, "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address="+debug)
 		} else {
-			results = append(results, "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005")
+			results = append(results, "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address="+debug)
 		}
 	}
 
