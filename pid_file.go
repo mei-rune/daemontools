@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"strings"
 )
 
 var pidFile *string
@@ -29,12 +30,12 @@ func isPidInitialize() bool {
 	return ret
 }
 
-func createPidFile(pidFile string) error {
+func createPidFile(pidFile, image string) error {
 	if pidString, err := ioutil.ReadFile(pidFile); err == nil {
 		pid, err := strconv.Atoi(string(pidString))
 		if err == nil {
-			if _, err := os.FindProcess(pid); nil == err {
-				if pidExists(pid) {
+			if processExistsByPid(pid) {
+				if nm, err := getProcessName(pid); nil != err || strings.Contains(nm, image) {
 					return fmt.Errorf("pid file found, ensure "+pidFile+" is not running or delete %s", pidFile)
 				}
 			}
@@ -56,4 +57,16 @@ func removePidFile(pidFile string) {
 	if err := os.Remove(pidFile); err != nil {
 		fmt.Printf("Error removing %s: %s\r\n", pidFile, err)
 	}
+}
+
+func processExistsByPid(pid int) bool {
+	pids, e := enumProcesses()
+	if nil != e {
+		os.Stderr.WriteString("[warn] enum processes failed, " + e.Error() + "\r\n")
+		return processExists(pid)
+	}
+	if _, ok := pids[pid]; ok {
+		return true
+	}
+	return false
 }

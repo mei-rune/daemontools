@@ -67,8 +67,8 @@ func Main() {
 		return
 	}
 
+	nm := filepath.Base(os.Args[0])
 	if !isPidInitialize() {
-		nm := filepath.Base(os.Args[0])
 		if "windows" == runtime.GOOS {
 			flag.Set("pid_file", nm+".pid")
 		} else {
@@ -76,7 +76,7 @@ func Main() {
 		}
 	}
 
-	if err := createPidFile(*pidFile); err != nil {
+	if err := createPidFile(*pidFile, nm); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
