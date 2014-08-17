@@ -5,38 +5,36 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"runtime"
+	"strings"
 	"time"
+
+	"github.com/mitchellh/go-ps"
 )
 
 func killByPid(pid int) error {
-	if "windows" == runtime.GOOS {
-		return killProcess(pid)
-	} else {
-		pr, e := os.FindProcess(pid)
-		if nil != e {
-			return e
-		}
-		defer pr.Release()
-		return pr.Kill()
+	pr, e := os.FindProcess(pid)
+	if nil != e {
+		return e
 	}
+	defer pr.Release()
+	return pr.Kill()
 }
-func killProcessAndChildren(pid int, ps map[int]int) error {
+func killProcessAndChildren(pid int, processes []ps.Process) error {
 	if -1 == pid {
 		return nil
 	}
-	if nil == ps {
+	if nil == processes {
 		var e error
-		ps, e = enumProcesses()
+		processes, e = ps.Processes()
 		if nil != e {
 			log.Println("killProcessAndChildren()" + e.Error())
 			return killByPid(pid)
 		}
 	}
 
-	for c, p := range ps {
-		if p == pid {
-			killProcessAndChildren(c, ps)
+	for _, pr := range processes {
+		if pr.PPid() == pid {
+			killProcessAndChildren(pr.Pid(), processes)
 		}
 	}
 	return killByPid(pid)
@@ -67,25 +65,18 @@ func execWithTimeout(timeout time.Duration, cmd *exec.Cmd) error {
 	return err
 }
 
-func pidExists(pid int) bool {
-	pids, e := enumProcesses()
+func processExists(pid int, image string) bool {
+	pr, e := ps.FindProcess(pid)
 	if nil != e {
-		return processExists(pid)
+		panic(e)
 	}
-	if _, ok := pids[pid]; ok {
-		return true
-	}
-	return false
-}
 
-func processExists(pid int) bool {
-	p, e := os.FindProcess(pid)
-	if nil != e {
-		if os.IsPermission(e) {
-			return true
-		}
+	if nil == pr {
 		return false
 	}
-	p.Release()
+
+	if "" != image && !strings.Contains(strings.ToLower(pr.Executable()), strings.ToLower(image)) {
+		return false
+	}
 	return true
 }
