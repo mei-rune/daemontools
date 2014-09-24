@@ -25,7 +25,7 @@ var index_html = `<!DOCTYPE html>
                         <a href="http://github.com/runner-mei/daemontools" class="brand">Daemontools</a>
                     </div>
                     <div class='pull-right'>
-                        <a href="#dj_settings_template" class="btn btn-primary btn-mini" data-content="{&quot;destroy_failed_jobs&quot;:false,&quot;sleep_delay&quot;:5,&quot;max_attempts&quot;:1,&quot;max_run_time&quot;:14400,&quot;read_ahead&quot;:5,&quot;delay_jobs&quot;:true,&quot;delayed_job_version&quot;:&quot;3.0.3&quot;,&quot;dj_mon_version&quot;:&quot;1.1.0&quot;}" id="settings" rel="modal">Settings</a>
+                        <a href="#daemontools_settings_template" class="btn btn-primary btn-mini" data-content="{}" id="settings" rel="modal">Settings</a>
                     </div>
                     <div class='pull-right'>
                         <div id='dj-counts-view'></div>
@@ -36,27 +36,24 @@ var index_html = `<!DOCTYPE html>
     </header>
     <div class='container centered'></div>
     <div class='container'>
-        <p>
-            <div class='lead'>
-                Daemontools
-            </div>
-        </p>
         <table class='table table-striped' id='jobs-table'>
         <thead>
           <tr>
-          <th>Name</th>
-          <th>Pid</th>
-          <th>Status</th>
-          <th>Last Error</th>
-          <th class='date'>Run at</th>
+          <th>name</th>
+          <th>pid</th>
+          <th>status</th>
+          <th>retries</th>
+          <th>last error</th>
+          <th class='date'>run at</th>
           </tr>
         </thead>
         <tbody>
-          {{range $index, $element := .}}
+          {{range $index, $element := .processes}}
           <tr>
             <td><div class='label label-info'>{{$element.name}}</div></td>
             <td> {{$element.pid}} </td>
             <td> {{$element.status}} </td>
+            <td> {{$element.retries}} </td>
             <td> <a href="#last_error_template" data-content="{{$element.last_error}}" rel='modal' title='Last Error'> {{$element.last_error_summary}} </a> 
              <div class='modal hide'>
               <div class='modal-header'>
@@ -105,56 +102,34 @@ var index_html = `<!DOCTYPE html>
     </div>
 
 
-<script id='dj_settings_template' type='text/x-handlebars-template'>
-<div class='modal hide'>
-<div class='modal-header'>
-  <button class='close' data-dismiss='modal' type='button'>¡Á</button>
-  <h3> Settings </h3>
-</div>
+<script id='daemontools_settings_template' type='text/x-handlebars-template'>
+  <div class='modal hide'>
+    <div class='modal-header'>
+      <button class='close' data-dismiss='modal' type='button'>×</button>
+      <h3> Settings </h3>
+    </div>
 
-<div class='modal-body'>
-  <table class='table table-bordered table-striped'>
-    <tr>
-      <td>Delayed Job version</td>
-      <td><code>{{.content.delayed_job_version}}</code></td>
-    </tr>
-    <tr>
-      <td>DJ Mon version</td>
-      <td><code>{{.content.dj_mon_version}}</code></td>
-    </tr>
-    <tr>
-      <td>Destroy failed jobs</td>
-      <td><code>{{.content.destroy_failed_jobs}}</code></td>
-    </tr>
-    <tr>
-      <td>Sleep delay</td>
-      <td><code>{{.content.sleep_delay}}</code> seconds</td>
-    </tr>
-    <tr>
-      <td>Max attempts</td>
-      <td><code>{{.content.max_attempts}}</code></td>
-    </tr>
-    <tr>
-      <td>Max run time</td>
-      <td><code>{{.content.max_run_time}}</code> seconds</td>
-    </tr>
-    <tr>
-      <td>Read ahead</td>
-      <td><code>{{.content.read_ahead}}</code></td>
-    </tr>
-    <tr>
-      <td>Delay Jobs</td>
-      <td><code>{{.content.delay_jobs}}</code></td>
-    </tr>
-  </table>
-</div>
-<div class='modal-footer'> <a href="#" class="btn btn-primary" data-dismiss="modal">Close</a> </div>
-</div>
+    <div class='modal-body'>
+      <table class='table table-bordered table-striped'>
+        <tr>
+          <td>version</td>
+          <td><code>{{.version}}</code></td>
+        </tr>
+        {{range $index, $element := .settings}}
+        <tr>
+          <td>{{$index}}</td>
+          <td><code>{{$element}}</code></td>
+        </tr>
+        {{end}}
+
+      </table>
+    </div>
+    <div class='modal-footer'> <a href="#" class="btn btn-primary" data-dismiss="modal">Close</a> </div>
+  </div>
 </script>
 </body>
 
-</html>
-`
+</html>`
 
 var bootstrap_css = `/*!
  * Bootstrap v2.0.3

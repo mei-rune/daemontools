@@ -22,6 +22,27 @@ const (
 	PROC_STOPPNG  = 3
 )
 
+func statusString(srv_status, proc_status int32) string {
+	switch srv_status {
+	case SRV_INIT:
+		return "disabled"
+	case SRV_STOPPING:
+		return "disabling"
+	case SRV_STARTING, SRV_RUNNING:
+		switch proc_status {
+		case PROC_INIT:
+			return "waiting"
+		case PROC_STARTING:
+			return "starting"
+		case PROC_RUNNING:
+			return "running"
+		case PROC_STOPPNG:
+			return "crashing"
+		}
+	}
+	return fmt.Sprintf("srv=%d, proc=%d", srv_status, proc_status)
+}
+
 func srvString(status int32) string {
 	switch status {
 	case SRV_INIT:
@@ -58,23 +79,23 @@ type command struct {
 }
 
 func (self *command) command() *exec.Cmd {
-    switch self.proc {
+	switch self.proc {
 	case "__kill___", "", "__signal__", "__console__":
-	    return &exec.Cmd{Path:self.proc}
+		return &exec.Cmd{Path: self.proc}
 	default:
-    	cmd := exec.Command(self.proc, self.arguments...)
-    	cmd.Dir = self.directory
-    	cmd.Env = os.Environ()
-    	if nil != self.environments && 0 != len(self.environments) {
-    		os_env := os.Environ()
-    		environments := make([]string, 0, len(self.environments)+len(os_env))
-    		environments = append(environments, self.environments...)
-    		environments = append(environments, os_env...)
-    		cmd.Env = environments
-    	} else {
-    		cmd.Env = os.Environ()
-    	}
-    	return cmd
+		cmd := exec.Command(self.proc, self.arguments...)
+		cmd.Dir = self.directory
+		cmd.Env = os.Environ()
+		if nil != self.environments && 0 != len(self.environments) {
+			os_env := os.Environ()
+			environments := make([]string, 0, len(self.environments)+len(os_env))
+			environments = append(environments, self.environments...)
+			environments = append(environments, os_env...)
+			cmd.Env = environments
+		} else {
+			cmd.Env = os.Environ()
+		}
+		return cmd
 	}
 }
 

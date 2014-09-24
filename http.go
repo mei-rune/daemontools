@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 var (
@@ -96,12 +97,19 @@ func indexHandler(w http.ResponseWriter, r *http.Request, backend *manager) {
 	}
 
 	if nil != e {
+		log.Println("[error]", e)
 		w.WriteHeader(http.StatusInternalServerError)
 		io.WriteString(w, e.Error())
 		return
 	}
+
 	ctx := backend.Stats()
-	t.Execute(w, ctx)
+	if e = t.Execute(w, ctx); nil != e {
+		log.Println("[error]", e)
+	}
+}
+func indexHandlerWithMessage(w http.ResponseWriter, r *http.Request, backend *manager, ok, message string) {
+	indexHandler(w, r, backend)
 }
 
 // func allHandler(w http.ResponseWriter, r *http.Request, backend *manager) {
@@ -146,66 +154,51 @@ func httpServe(backend *manager) {
 					return
 				}
 			case "POST":
-				// for _, retry := range restart_by_id_list {
-				// 	if retry.MatchString(r.URL.Path) {
-				// 		ss := strings.Split(r.URL.Path, "/")
-				// 		id, e := strconv.ParseInt(ss[len(ss)-2], 10, 0)
-				// 		if nil != e {
-				// 			indexHandlerWithMessage(w, r, "error", e.Error())
-				// 			return
-				// 		}
+				for _, retry := range restart_by_id_list {
+					if retry.MatchString(r.URL.Path) {
+						ss := strings.Split(r.URL.Path, "/")
+						e := backend.retry(ss[len(ss)-2])
+						if nil == e {
+							indexHandlerWithMessage(w, r, backend, "success", "The job has been queued for a re-run")
+						} else {
+							indexHandlerWithMessage(w, r, backend, "error", e.Error())
+						}
+						return
+					}
+				}
 
-				// 		e = backend.retry(id)
-				// 		if nil == e {
-				// 			indexHandlerWithMessage(w, r, "success", "The job has been queued for a re-run")
-				// 		} else {
-				// 			indexHandlerWithMessage(w, r, "error", e.Error())
-				// 		}
-				// 		return
-				// 	}
-				// }
+				for _, retry := range start_by_id_list {
+					if retry.MatchString(r.URL.Path) {
+						ss := strings.Split(r.URL.Path, "/")
+						e := backend.start(ss[len(ss)-2])
+						if nil == e {
+							indexHandlerWithMessage(w, r, backend, "success", "The job has been queued for a re-run")
+						} else {
+							indexHandlerWithMessage(w, r, backend, "error", e.Error())
+						}
+						return
+					}
+				}
 
-				// for _, retry := range start_by_id_list {
-				// 	if retry.MatchString(r.URL.Path) {
-				// 		ss := strings.Split(r.URL.Path, "/")
-				// 		id, e := strconv.ParseInt(ss[len(ss)-2], 10, 0)
-				// 		if nil != e {
-				// 			indexHandlerWithMessage(w, r, "error", e.Error())
-				// 			return
-				// 		}
-
-				// 		e = backend.retry(id)
-				// 		if nil == e {
-				// 			indexHandlerWithMessage(w, r, "success", "The job has been queued for a re-run")
-				// 		} else {
-				// 			indexHandlerWithMessage(w, r, "error", e.Error())
-				// 		}
-				// 		return
-				// 	}
-				// }
-
-				// for _, job_id := range stop_by_id_list {
-				// 	if job_id.MatchString(r.URL.Path) {
-				// 		ss := strings.Split(r.URL.Path, "/")
-				// 		id, e := strconv.ParseInt(ss[len(ss)-2], 10, 0)
-				// 		if nil != e {
-				// 			indexHandlerWithMessage(w, r, "error", e.Error())
-				// 			return
-				// 		}
-
-				// 		e = backend.destroy(id)
-				// 		if nil == e {
-				// 			indexHandlerWithMessage(w, r, "success", "The job was deleted")
-				// 		} else {
-				// 			indexHandlerWithMessage(w, r, "error", e.Error())
-				// 		}
-				// 		return
-				// 	}
-				// }
+				for _, job_id := range stop_by_id_list {
+					if job_id.MatchString(r.URL.Path) {
+						ss := strings.Split(r.URL.Path, "/")
+						e := backend.stop(ss[len(ss)-2])
+						if nil == e {
+							indexHandlerWithMessage(w, r, backend, "success", "The job was deleted")
+						} else {
+							indexHandlerWithMessage(w, r, backend, "error", e.Error())
+						}
+						return
+					}
+				}
 			}
 
 			w.WriteHeader(http.StatusNotFound)
 		})
+
 	log.Println("[daemontools] serving at '" + *listenAddress + "'")
-	http.ListenAndServe(*listenAddress, nil)
+	if e := http.ListenAndServe(*listenAddress, nil); nil != e {
+		log.Println("[daemontools] fail to listen at '"+*listenAddress+"'", e)
+	}
 }

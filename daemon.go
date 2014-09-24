@@ -145,7 +145,7 @@ func Main() {
 		fmt.Println("[warn] java is", *java_path)
 	}
 
-	mgr, e := loadConfigs(*root_dir, file)
+	mgr, e := loadConfigs(*root_dir, file, nm)
 	if nil != e {
 		fmt.Println(e)
 		return
@@ -235,7 +235,7 @@ func execute(pa string) error {
 	return cmd.Run()
 }
 
-func loadConfigs(root, file string) (*manager, error) {
+func loadConfigs(root, file, execute string) (*manager, error) {
 	var arguments map[string]interface{}
 	//"autostart_"
 	if 0 != len(file) {
@@ -255,6 +255,12 @@ func loadConfigs(root, file string) (*manager, error) {
 		arguments["config_file"] = file
 		arguments["os"] = runtime.GOOS
 		arguments["arch"] = runtime.GOARCH
+	}
+
+	if "" == execute {
+		arguments["execute"] = "daemontools"
+	} else {
+		arguments["execute"] = execute
 	}
 
 	patterns := stringsWithDefault(arguments, "patterns", ";", nil)
@@ -322,7 +328,7 @@ func loadConfigs(root, file string) (*manager, error) {
 		s.setOutput(out)
 	}
 
-	return &manager{supervisors: supervisors}, nil
+	return &manager{settings_file: file, settings: arguments, supervisors: supervisors}, nil
 }
 
 func loadConfig(file string, args map[string]interface{}, supervisors []supervisor) ([]supervisor, error) {

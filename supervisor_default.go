@@ -33,16 +33,15 @@ func (self *supervisor_default) stats() map[string]interface{} {
 	pid = self.pid
 	self.cond.L.Unlock()
 
-	srv_status := srvString(atomic.LoadInt32(&self.srv_status))
-	proc_status := procString(atomic.LoadInt32(&self.proc_status))
-
+	srv_status := atomic.LoadInt32(&self.srv_status)
+	proc_status := atomic.LoadInt32(&self.proc_status)
 	res := self.supervisorBase.stats()
 
 	res["pid"] = pid
 	res["success_flag"] = self.success_flag
-	res["status"] = srv_status + " " + proc_status
-	res["srv_status"] = srv_status
-	res["proc_status"] = proc_status
+	res["status"] = statusString(srv_status, proc_status)
+	res["srv_status"] = srvString(srv_status)
+	res["proc_status"] = procString(proc_status)
 	return res
 }
 
@@ -141,9 +140,9 @@ func (self *supervisor_default) interrupt() {
 			ok, txt = self.killByCmd(pid)
 		}
 
-    	if 0 != len(txt) {
-    	  self.logString(txt)
-    	}
+		if 0 != len(txt) {
+			self.logString(txt)
+		}
 		if ok {
 			return
 		}
@@ -329,17 +328,17 @@ func (self *supervisor_default) run(cb func()) {
 	self.cond.L.Unlock()
 	is_locked = false
 
-    go cmd.Wait()
-    state, e := cmd.Process.Wait();
-	if  nil != e {
+	go cmd.Wait()
+	state, e := cmd.Process.Wait()
+	if nil != e {
 		self.logString(fmt.Sprintf("[sys] wait process failed - %v\r\n", e))
 		return
 	}
 	if !state.Success() {
-	  e = &exec.ExitError{state}
+		e = &exec.ExitError{state}
 		self.logString(fmt.Sprintf("[sys] wait process failed - %v\r\n", e))
-      return
-    }
+		return
+	}
 
 	self.logString("[sys] process is exited\r\n")
 }

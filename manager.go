@@ -1,16 +1,28 @@
 package daemontools
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
 )
 
 type manager struct {
-	supervisors []supervisor
+	settings_file string
+	settings      map[string]interface{}
+	supervisors   []supervisor
 }
 
-func runCommand(s string) {
+func (self *manager) retry(name string) error {
+	return errors.New("not implemented")
+}
+
+func (self *manager) start(name string) error {
+	return errors.New("not implemented")
+}
+
+func (self *manager) stop(name string) error {
+	return errors.New("not implemented")
 }
 
 func (self *manager) Stats() interface{} {
@@ -18,7 +30,9 @@ func (self *manager) Stats() interface{} {
 	for i, s := range self.supervisors {
 		res[i] = s.stats()
 	}
-	return res
+	return map[string]interface{}{"processes": res,
+		"version":  "1.0",
+		"settings": self.settings}
 }
 
 func (self *manager) rpel() {
