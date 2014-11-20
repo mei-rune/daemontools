@@ -541,6 +541,28 @@ func loadJavaArguments(arguments []string, args []map[string]interface{}) ([]str
 		}
 	}
 
+	// JAVA_ARGS="${JAVA_ARGS} -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=18889 -Dcom.sun.management.jmxremote.authenticate=true -Dcom.sun.management.jmxremote.ssl=false"
+	// JAVA_ARGS="${JAVA_ARGS} -Dcom.sun.management.jmxremote.access.file=/tmp/jmx.access"
+	// JAVA_ARGS="${JAVA_ARGS} -Dcom.sun.management.jmxremote.password.file=/tmp/jmx.pass"
+	jmx_option := stringWithArguments(args, "jmx_option", "")
+	if "true" != jmx_option {
+		results = append(results, "-Dcom.sun.management.jmxremote")
+		if jmx_port := stringWithArguments(args, "jmx_port", ""); "" != jmx_port {
+			results = append(results, "-Dcom.sun.management.jmxremote.port="+jmx_port)
+		}
+
+		jmx_password := stringWithArguments(args, "jmx_password", "")
+		jmx_access := stringWithArguments(args, "jmx_access", "")
+		if "" != jmx_access && "" != jmx_password {
+			results = append(results, "-Dcom.sun.management.jmxremote.authenticate=true")
+			results = append(results, "-Dcom.sun.management.jmxremote.access.file="+jmx_access)
+			results = append(results, "-Dcom.sun.management.jmxremote.password.file="+jmx_password)
+		} else {
+			results = append(results, "-Dcom.sun.management.jmxremote.authenticate=false")
+		}
+		results = append(results, "-Dcom.sun.management.jmxremote.ssl=false")
+	}
+
 	options := stringsWithArguments(args, "java_options", ",", nil, false)
 	if nil != options && 0 != len(options) {
 		results = append(results, options...)
