@@ -549,7 +549,7 @@ func loadJavaArguments(arguments []string, args []map[string]interface{}) ([]str
 	// JAVA_ARGS="${JAVA_ARGS} -Dcom.sun.management.jmxremote.access.file=/tmp/jmx.access"
 	// JAVA_ARGS="${JAVA_ARGS} -Dcom.sun.management.jmxremote.password.file=/tmp/jmx.pass"
 	jmx_option := stringWithArguments(args, "jmx_option", "")
-	if "true" != jmx_option {
+	if "true" == jmx_option || "enable" == jmx_option {
 		results = append(results, "-Dcom.sun.management.jmxremote")
 		if jmx_port := stringWithArguments(args, "jmx_port", ""); "" != jmx_port {
 			results = append(results, "-Dcom.sun.management.jmxremote.port="+jmx_port)
