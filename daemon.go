@@ -615,7 +615,9 @@ func loadProperties(root, file string) (map[string]interface{}, error) {
 		return nil, errors.New("ummarshal config failed, " + e.Error())
 	}
 
-	if _, ok := arguments["java"]; !ok {
+	if s, ok := arguments["java"]; ok {
+		*java_path = fmt.Sprint(s)
+	} else {
 		arguments["java"] = *java_path
 	}
 
