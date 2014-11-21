@@ -115,7 +115,11 @@ func Main() {
 			filepath.Clean(abs(filepath.Join(*root_dir, "conf", program+".conf"))),
 			filepath.Clean(abs(filepath.Join(*root_dir, "daemon.conf"))),
 			filepath.Clean(abs(filepath.Join(*root_dir, "etc", "daemon.conf"))),
-			filepath.Clean(abs(filepath.Join(*root_dir, "conf", "daemon.conf")))}
+			filepath.Clean(abs(filepath.Join(*root_dir, "conf", "daemon.conf"))),
+			filepath.Clean(abs(filepath.Join(*root_dir, "data", "etc", program+".conf"))),
+			filepath.Clean(abs(filepath.Join(*root_dir, "data", "conf", program+".conf"))),
+			filepath.Clean(abs(filepath.Join(*root_dir, "data", "etc", "daemon.conf"))),
+			filepath.Clean(abs(filepath.Join(*root_dir, "data", "conf", "daemon.conf")))}
 
 		found := false
 		for _, nm := range files {
