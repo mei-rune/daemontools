@@ -15,6 +15,7 @@ type Manager struct {
 	supervisors      []supervisor
 	pre_start_path   string
 	post_finish_path string
+	mode             string
 }
 
 func (self *Manager) retry(name string) error {
@@ -66,10 +67,16 @@ func (self *Manager) Start() error {
 		return e
 	}
 	for _, s := range self.supervisors {
+		if !s.isMode(self.mode) {
+			continue
+		}
 		s.start()
 	}
 
 	for _, s := range self.supervisors {
+		if !s.isMode(self.mode) {
+			continue
+		}
 		if e := s.untilStarted(); nil != e {
 			return fmt.Errorf("start '%v' failed, %v", s.name(), e)
 		}
@@ -79,10 +86,17 @@ func (self *Manager) Start() error {
 
 func (self *Manager) Stop() {
 	for _, s := range self.supervisors {
+		if !s.isMode(self.mode) {
+			continue
+		}
 		s.stop()
 	}
 
 	for _, s := range self.supervisors {
+		if !s.isMode(self.mode) {
+			continue
+		}
+
 		if err := s.untilStopped(); nil != err {
 			fmt.Println(fmt.Sprintf("stop '%v' failed, %v", s.name(), err))
 		}

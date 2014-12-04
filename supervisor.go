@@ -103,6 +103,7 @@ type supervisor interface {
 	name() string
 	start()
 	stop()
+	isMode(mode string) bool
 	untilStarted() error
 	untilStopped() error
 
@@ -116,9 +117,22 @@ type supervisorBase struct {
 	killTimeout time.Duration
 	start_cmd   *command
 	stop_cmd    *command
+	mode        string
+	out         io.Writer
+	srv_status  int32
+}
 
-	out        io.Writer
-	srv_status int32
+func (self *supervisorBase) isMode(mode string) bool {
+	if "" == mode || "all" == mode {
+		return true
+	}
+	if "" == self.mode || "default" == self.mode {
+		return true
+	}
+	if self.mode == mode {
+		return true
+	}
+	return false
 }
 
 func (self *supervisorBase) name() string {

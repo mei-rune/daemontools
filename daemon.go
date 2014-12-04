@@ -24,6 +24,7 @@ var (
 	pre_start     = flag.String("pre_start", "pre_start.bat", "the name of pre start")
 	post_finish   = flag.String("post_finish", "post_finish.bat", "the name of post finish")
 	java_path     = flag.String("java_path", "", "the path of java, should auto search if it is empty")
+	mode          = flag.String("mode", "", "the mode of running")
 
 	manager_exporter = &Exporter{}
 )
@@ -43,14 +44,6 @@ func dirExists(nm string) bool {
 	}
 	return fs.IsDir()
 }
-
-// func usage() {
-// 	program := filepath.Base(os.Args[0])
-// 	fmt.Fprint(os.Stderr, program, ` [options]
-// Options:
-// `)
-// 	flag.PrintDefaults()
-// }
 
 func abs(s string) string {
 	r, e := filepath.Abs(s)
@@ -430,6 +423,7 @@ func loadSupervisor(file string, arguments []map[string]interface{}, supervisors
 		pidfile = filepath.Clean(abs(pidfile))
 		supervisors = append(supervisors, &supervisorWithPidfile{pidfile: pidfile,
 			supervisorBase: supervisorBase{proc_name: name,
+				mode:        stringWithArguments(arguments, "mode", ""),
 				retries:     retries,
 				killTimeout: killTimeout,
 				start_cmd:   start,
@@ -438,6 +432,7 @@ func loadSupervisor(file string, arguments []map[string]interface{}, supervisors
 	} else {
 		supervisors = append(supervisors, &supervisor_default{success_flag: success_flag,
 			supervisorBase: supervisorBase{proc_name: name,
+				mode:        stringWithArguments(arguments, "mode", ""),
 				retries:     retries,
 				killTimeout: killTimeout,
 				start_cmd:   start,

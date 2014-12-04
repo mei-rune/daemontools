@@ -110,16 +110,3 @@ func indexHandler(w http.ResponseWriter, r *http.Request, backend *Manager) {
 func indexHandlerWithMessage(w http.ResponseWriter, r *http.Request, backend *Manager, ok, message string) {
 	indexHandler(w, r, backend)
 }
-
-// func allHandler(w http.ResponseWriter, r *http.Request, backend *Manager) {
-// 	queryHandler(w, r, backend, nil)
-// }
-
-func httpServe(backend *Manager) {
-	http.Handle("/", backend)
-
-	log.Println("[daemontools] serving at '" + *listenAddress + "'")
-	if e := http.ListenAndServe(*listenAddress, nil); nil != e {
-		log.Println("[daemontools] fail to listen at '"+*listenAddress+"'", e)
-	}
-}
