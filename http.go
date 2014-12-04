@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 )
 
 var (
@@ -85,7 +84,7 @@ func mustascheJsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header()["Content-Type"] = []string{"text/javascript; charset=utf-8"}
 	fileHandler(w, r, "/static/daemons/mustasche.js", mustasche_js)
 }
-func indexHandler(w http.ResponseWriter, r *http.Request, backend *manager) {
+func indexHandler(w http.ResponseWriter, r *http.Request, backend *Manager) {
 	var e error
 	var t *template.Template
 	name := cd_dir + "/index.html"
@@ -108,94 +107,16 @@ func indexHandler(w http.ResponseWriter, r *http.Request, backend *manager) {
 		log.Println("[error]", e)
 	}
 }
-func indexHandlerWithMessage(w http.ResponseWriter, r *http.Request, backend *manager, ok, message string) {
+func indexHandlerWithMessage(w http.ResponseWriter, r *http.Request, backend *Manager, ok, message string) {
 	indexHandler(w, r, backend)
 }
 
-// func allHandler(w http.ResponseWriter, r *http.Request, backend *manager) {
+// func allHandler(w http.ResponseWriter, r *http.Request, backend *Manager) {
 // 	queryHandler(w, r, backend, nil)
 // }
 
-func httpServe(backend *manager) {
-	http.HandleFunc("/",
-		func(w http.ResponseWriter, r *http.Request) {
-			switch r.Method {
-			case "GET":
-				switch r.URL.Path {
-				case "/", "/index.html", "/index.htm", "/daemons", "/daemons/":
-					indexHandler(w, r, backend)
-					return
-				case "/static/daemons/bootstrap.css":
-					bootstrapCssHandler(w, r)
-					return
-				case "/static/daemons/bootstrap_modal.js":
-					bootstrapModalJsHandler(w, r)
-					return
-				case "/static/daemons/bootstrap_popover.js":
-					bootstrapPopoverJsHandler(w, r)
-					return
-				case "/static/daemons/bootstrap_tab.js":
-					bootstrapTabJsHandler(w, r)
-					return
-				case "/static/daemons/bootstrap_tooltip.js":
-					bootstrapTooltipJsHandler(w, r)
-					return
-				case "/static/daemons/dj_mon.css":
-					djmonCssHandler(w, r)
-					return
-				case "/static/daemons/dj_mon.js":
-					djmonJsHandler(w, r)
-					return
-				case "/static/daemons/jquery.min.js":
-					jqueryJsHandler(w, r)
-					return
-				case "/static/daemons/mustache.js":
-					mustascheJsHandler(w, r)
-					return
-				}
-			case "POST":
-				for _, retry := range restart_by_id_list {
-					if retry.MatchString(r.URL.Path) {
-						ss := strings.Split(r.URL.Path, "/")
-						e := backend.retry(ss[len(ss)-2])
-						if nil == e {
-							indexHandlerWithMessage(w, r, backend, "success", "The job has been queued for a re-run")
-						} else {
-							indexHandlerWithMessage(w, r, backend, "error", e.Error())
-						}
-						return
-					}
-				}
-
-				for _, retry := range start_by_id_list {
-					if retry.MatchString(r.URL.Path) {
-						ss := strings.Split(r.URL.Path, "/")
-						e := backend.start(ss[len(ss)-2])
-						if nil == e {
-							indexHandlerWithMessage(w, r, backend, "success", "The job has been queued for a re-run")
-						} else {
-							indexHandlerWithMessage(w, r, backend, "error", e.Error())
-						}
-						return
-					}
-				}
-
-				for _, job_id := range stop_by_id_list {
-					if job_id.MatchString(r.URL.Path) {
-						ss := strings.Split(r.URL.Path, "/")
-						e := backend.stop(ss[len(ss)-2])
-						if nil == e {
-							indexHandlerWithMessage(w, r, backend, "success", "The job was deleted")
-						} else {
-							indexHandlerWithMessage(w, r, backend, "error", e.Error())
-						}
-						return
-					}
-				}
-			}
-
-			w.WriteHeader(http.StatusNotFound)
-		})
+func httpServe(backend *Manager) {
+	http.Handle("/", backend)
 
 	log.Println("[daemontools] serving at '" + *listenAddress + "'")
 	if e := http.ListenAndServe(*listenAddress, nil); nil != e {

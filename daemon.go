@@ -60,13 +60,7 @@ func abs(s string) string {
 	return r
 }
 
-func Main() {
-	flag.Parse()
-	if nil != flag.Args() && 0 != len(flag.Args()) {
-		flag.Usage()
-		return
-	}
-
+func New() (*Manager, error) {
 	nm := filepath.Base(os.Args[0])
 	if !isPidInitialize() {
 		if "windows" == runtime.GOOS {
@@ -96,8 +90,7 @@ func Main() {
 	}
 
 	if !dirExists(*root_dir) {
-		fmt.Println("root directory '" + *root_dir + "' is not exist.")
-		return
+		return nil, errors.New("root directory '" + *root_dir + "' is not exist.")
 	} else {
 		fmt.Println("root directory is '" + *root_dir + "'.")
 	}
@@ -139,8 +132,8 @@ func Main() {
 	} else {
 		file = filepath.Clean(abs(*config_file))
 		if !fileExists(file) {
-			fmt.Println("config '" + file + "' is not exists.")
-			return
+			return nil, errors.New("config '" + file + "' is not exists.")
+
 		}
 	}
 
@@ -151,8 +144,7 @@ func Main() {
 
 	mgr, e := loadConfigs(*root_dir, file, nm)
 	if nil != e {
-		fmt.Println(e)
-		return
+		return nil, e
 	}
 
 	expvar.Publish("supervisors", manager_exporter)
@@ -172,25 +164,9 @@ func Main() {
 		}
 	}
 
-	if fileExists(pre_start_path) {
-		fmt.Println("execute '" + pre_start_path + "'")
-		e = execute(pre_start_path)
-		if nil != e {
-			fmt.Println("execute 'pre_start' failed,", e)
-			return
-		}
-	}
-
-	mgr.runForever()
-
-	if fileExists(post_finish_path) {
-		fmt.Println("execute '" + post_finish_path + "'")
-		e = execute(post_finish_path)
-		if nil != e {
-			fmt.Println("execute 'post_finish' failed,", e)
-			return
-		}
-	}
+	mgr.pre_start_path = pre_start_path
+	mgr.post_finish_path = post_finish_path
+	return mgr, nil
 }
 
 func search_java_home(root string) string {
@@ -239,7 +215,7 @@ func execute(pa string) error {
 	return cmd.Run()
 }
 
-func loadConfigs(root, file, execute string) (*manager, error) {
+func loadConfigs(root, file, execute string) (*Manager, error) {
 	var arguments map[string]interface{}
 	//"autostart_"
 	if 0 != len(file) {
@@ -332,7 +308,7 @@ func loadConfigs(root, file, execute string) (*manager, error) {
 		s.setOutput(out)
 	}
 
-	return &manager{settings_file: file, settings: arguments, supervisors: supervisors}, nil
+	return &Manager{settings_file: file, settings: arguments, supervisors: supervisors}, nil
 }
 
 func loadConfig(file string, args map[string]interface{}, supervisors []supervisor) ([]supervisor, error) {
