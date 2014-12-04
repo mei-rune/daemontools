@@ -575,20 +575,20 @@ func loadDefault(root, file string) map[string]interface{} {
 func loadProperties(root, file string) (map[string]interface{}, error) {
 	t, e := template.ParseFiles(file)
 	if nil != e {
-		return nil, errors.New("read config failed, " + e.Error())
+		return nil, errors.New("read config '" + file + "' failed, " + e.Error())
 	}
 	args := loadDefault(root, file)
 
 	var buffer bytes.Buffer
 	e = t.Execute(&buffer, args)
 	if nil != e {
-		return nil, errors.New("generate config failed, " + e.Error())
+		return nil, errors.New("generate config '" + file + "' failed, " + e.Error())
 	}
 
 	var arguments map[string]interface{}
 	e = json.Unmarshal(buffer.Bytes(), &arguments)
 	if nil != e {
-		return nil, errors.New("ummarshal config failed, " + e.Error())
+		return nil, errors.New("ummarshal config '" + file + "' failed, " + e.Error())
 	}
 
 	if s, ok := arguments["java"]; ok {
