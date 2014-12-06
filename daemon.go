@@ -18,9 +18,9 @@ import (
 
 var (
 	is_print      = flag.Bool("print", false, "print search paths while config is not found")
-	root_dir      = flag.String("root", ".", "the root directory")
-	config_file   = flag.String("config", "./<program_name>.conf", "the config file path")
-	listenAddress = flag.String("listen", ":37070", "the address of http")
+	RootDir       = flag.String("root", ".", "the root directory")
+	config_file   = flag.String("config", "", "the config file path")
+	ListenAddress = flag.String("listen", ":37070", "the address of http")
 	pre_start     = flag.String("pre_start", "pre_start.bat", "the name of pre start")
 	post_finish   = flag.String("post_finish", "post_finish.bat", "the name of post finish")
 	java_path     = flag.String("java_path", "", "the path of java, should auto search if it is empty")
@@ -29,7 +29,7 @@ var (
 	manager_exporter = &Exporter{}
 )
 
-func fileExists(nm string) bool {
+func FileExists(nm string) bool {
 	fs, e := os.Stat(nm)
 	if nil != e {
 		return false
@@ -37,7 +37,7 @@ func fileExists(nm string) bool {
 	return !fs.IsDir()
 }
 
-func dirExists(nm string) bool {
+func DirExists(nm string) bool {
 	fs, e := os.Stat(nm)
 	if nil != e {
 		return false
@@ -69,47 +69,47 @@ func New() (*Manager, error) {
 	}
 	defer removePidFile(*pidFile)
 
-	if "." == *root_dir {
-		*root_dir = abs(filepath.Dir(os.Args[0]))
+	if "." == *RootDir {
+		*RootDir = abs(filepath.Dir(os.Args[0]))
 		dirs := []string{abs(filepath.Dir(os.Args[0])), filepath.Join(abs(filepath.Dir(os.Args[0])), "..")}
 		for _, s := range dirs {
-			if dirExists(filepath.Join(s, "conf")) {
-				*root_dir = s
+			if DirExists(filepath.Join(s, "conf")) {
+				*RootDir = s
 				break
 			}
 		}
 	} else {
-		*root_dir = abs(*root_dir)
+		*RootDir = abs(*RootDir)
 	}
 
-	if !dirExists(*root_dir) {
-		return nil, errors.New("root directory '" + *root_dir + "' is not exist.")
+	if !DirExists(*RootDir) {
+		return nil, errors.New("root directory '" + *RootDir + "' is not exist.")
 	} else {
-		fmt.Println("root directory is '" + *root_dir + "'.")
+		fmt.Println("root directory is '" + *RootDir + "'.")
 	}
 
-	e := os.Chdir(*root_dir)
+	e := os.Chdir(*RootDir)
 	if nil != e {
-		fmt.Println("change current dir to \"" + *root_dir + "\"")
+		fmt.Println("change current dir to \"" + *RootDir + "\"")
 	}
 
 	file := ""
-	if "" == *config_file || "./<program_name>.conf" == *config_file {
+	if "" == *config_file {
 		program := filepath.Base(os.Args[0])
-		files := []string{filepath.Clean(abs(filepath.Join(*root_dir, program+".conf"))),
-			filepath.Clean(abs(filepath.Join(*root_dir, "etc", program+".conf"))),
-			filepath.Clean(abs(filepath.Join(*root_dir, "conf", program+".conf"))),
-			filepath.Clean(abs(filepath.Join(*root_dir, "daemon.conf"))),
-			filepath.Clean(abs(filepath.Join(*root_dir, "etc", "daemon.conf"))),
-			filepath.Clean(abs(filepath.Join(*root_dir, "conf", "daemon.conf"))),
-			filepath.Clean(abs(filepath.Join(*root_dir, "data", "etc", program+".conf"))),
-			filepath.Clean(abs(filepath.Join(*root_dir, "data", "conf", program+".conf"))),
-			filepath.Clean(abs(filepath.Join(*root_dir, "data", "etc", "daemon.conf"))),
-			filepath.Clean(abs(filepath.Join(*root_dir, "data", "conf", "daemon.conf")))}
+		files := []string{filepath.Clean(abs(filepath.Join(*RootDir, program+".conf"))),
+			filepath.Clean(abs(filepath.Join(*RootDir, "etc", program+".conf"))),
+			filepath.Clean(abs(filepath.Join(*RootDir, "conf", program+".conf"))),
+			filepath.Clean(abs(filepath.Join(*RootDir, "daemon.conf"))),
+			filepath.Clean(abs(filepath.Join(*RootDir, "etc", "daemon.conf"))),
+			filepath.Clean(abs(filepath.Join(*RootDir, "conf", "daemon.conf"))),
+			filepath.Clean(abs(filepath.Join(*RootDir, "data", "etc", program+".conf"))),
+			filepath.Clean(abs(filepath.Join(*RootDir, "data", "conf", program+".conf"))),
+			filepath.Clean(abs(filepath.Join(*RootDir, "data", "etc", "daemon.conf"))),
+			filepath.Clean(abs(filepath.Join(*RootDir, "data", "conf", "daemon.conf")))}
 
 		found := false
 		for _, nm := range files {
-			if fileExists(nm) {
+			if FileExists(nm) {
 				found = true
 				file = nm
 				break
@@ -124,18 +124,18 @@ func New() (*Manager, error) {
 		}
 	} else {
 		file = filepath.Clean(abs(*config_file))
-		if !fileExists(file) {
+		if !FileExists(file) {
 			return nil, errors.New("config '" + file + "' is not exists.")
 
 		}
 	}
 
 	if 0 == len(*java_path) {
-		*java_path = search_java_home(*root_dir)
+		*java_path = search_java_home(*RootDir)
 		fmt.Println("[warn] java is", *java_path)
 	}
 
-	mgr, e := loadConfigs(*root_dir, file, nm)
+	mgr, e := loadConfigs(*RootDir, file, nm)
 	if nil != e {
 		return nil, e
 	}
@@ -143,17 +143,17 @@ func New() (*Manager, error) {
 	expvar.Publish("supervisors", manager_exporter)
 	manager_exporter.Var = mgr
 
-	pre_start_path := filepath.Join(*root_dir, *pre_start)
+	pre_start_path := filepath.Join(*RootDir, *pre_start)
 	if "pre_start.bat" == *pre_start {
 		if "windows" != runtime.GOOS {
-			pre_start_path = filepath.Join(*root_dir, "pre_start.sh")
+			pre_start_path = filepath.Join(*RootDir, "pre_start.sh")
 		}
 	}
 
-	post_finish_path := filepath.Join(*root_dir, *post_finish)
+	post_finish_path := filepath.Join(*RootDir, *post_finish)
 	if "post_finish.bat" == *post_finish {
 		if "windows" != runtime.GOOS {
-			post_finish_path = filepath.Join(*root_dir, "post_finish.sh")
+			post_finish_path = filepath.Join(*RootDir, "post_finish.sh")
 		}
 	}
 
@@ -169,12 +169,12 @@ func search_java_home(root string) string {
 	}
 
 	jp := filepath.Join(root, "runtime_env/jdk/bin", java_execute)
-	if fileExists(jp) {
+	if FileExists(jp) {
 		return jp
 	}
 
 	jp = filepath.Join(root, "runtime_env/jre/bin", java_execute)
-	if fileExists(jp) {
+	if FileExists(jp) {
 		return jp
 	}
 
@@ -273,13 +273,13 @@ func loadConfigs(root, file, execute string) (*Manager, error) {
 		logPath}
 
 	for _, s := range logs {
-		if dirExists(s) {
+		if DirExists(s) {
 			logPath = s
 			break
 		}
 	}
 
-	if !dirExists(logPath) {
+	if !DirExists(logPath) {
 		os.Mkdir(logPath, 0660)
 	}
 
@@ -469,7 +469,7 @@ func loadCommand(args []map[string]interface{}) (*command, error) {
 		}
 
 		if "java" == proc || "java.exe" == proc {
-			proc = *java_path
+			proc = stringWithArguments(args, "java", *java_path)
 		}
 	}
 

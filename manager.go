@@ -41,7 +41,7 @@ func (self *Manager) Stats() interface{} {
 }
 
 func (self *Manager) beforeStart() error {
-	if fileExists(self.pre_start_path) {
+	if FileExists(self.pre_start_path) {
 		fmt.Println("execute '" + self.pre_start_path + "'")
 		e := execute(self.pre_start_path)
 		if nil != e {
@@ -52,7 +52,7 @@ func (self *Manager) beforeStart() error {
 }
 
 func (self *Manager) afterStop() error {
-	if fileExists(self.post_finish_path) {
+	if FileExists(self.post_finish_path) {
 		fmt.Println("execute '" + self.post_finish_path + "'")
 		e := execute(self.post_finish_path)
 		if nil != e {
@@ -113,9 +113,9 @@ func (self *Manager) RunForever() {
 		goto end
 	}
 	http.Handle("/", self)
-	log.Println("[daemontools] serving at '" + *listenAddress + "'")
-	if e := http.ListenAndServe(*listenAddress, nil); nil != e {
-		log.Println("[daemontools] fail to listen at '"+*listenAddress+"'", e)
+	log.Println("[daemontools] serving at '" + *ListenAddress + "'")
+	if e := http.ListenAndServe(*ListenAddress, nil); nil != e {
+		log.Println("[daemontools] fail to listen at '"+*ListenAddress+"'", e)
 	}
 	self.Stop()
 end:

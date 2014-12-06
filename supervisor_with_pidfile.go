@@ -42,7 +42,7 @@ func (self *supervisorWithPidfile) status() string {
 }
 
 func (self *supervisorWithPidfile) start() {
-	if self.pidfileExists() {
+	if self.pidFileExists() {
 		self.logString("[sys] ==================== srv  start ====================\r\n")
 		self.logString("[sys] process is already started by other\r\n")
 		atomic.CompareAndSwapInt32(&self.srv_status, SRV_INIT, SRV_RUNNING)
@@ -188,7 +188,7 @@ func (self *supervisorWithPidfile) run(cb func()) {
 	}()
 
 	for i := 0; i < 10; i++ {
-		if self.pidfileExists() {
+		if self.pidFileExists() {
 			if nil != cb {
 				cb()
 			}
@@ -200,7 +200,7 @@ func (self *supervisorWithPidfile) run(cb func()) {
 	self.logString(fmt.Sprintf("[sys] pid file '%v' is not exists.\r\n", self.pidfile))
 }
 
-func (self *supervisorWithPidfile) pidfileExists() bool {
+func (self *supervisorWithPidfile) pidFileExists() bool {
 	_, err := os.Stat(self.pidfile)
 	if nil == err {
 		return true
