@@ -7,6 +7,8 @@ import (
 	"github.com/runner-mei/daemontools"
 )
 
+var listenAddress = flag.String("listen", ":37070", "the address of http")
+
 func main() {
 	flag.Parse()
 	if nil != flag.Args() && 0 != len(flag.Args()) {
@@ -19,5 +21,5 @@ func main() {
 		log.Println(e)
 		return
 	}
-	mgr.RunForever()
+	mgr.RunForever(*listenAddress)
 }
