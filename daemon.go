@@ -17,14 +17,13 @@ import (
 )
 
 var (
-	is_print      = flag.Bool("print", false, "print search paths while config is not found")
-	RootDir       = flag.String("root", ".", "the root directory")
-	config_file   = flag.String("config", "", "the config file path")
-	ListenAddress = flag.String("listen", ":37070", "the address of http")
-	pre_start     = flag.String("pre_start", "pre_start.bat", "the name of pre start")
-	post_finish   = flag.String("post_finish", "post_finish.bat", "the name of post finish")
-	java_path     = flag.String("java_path", "", "the path of java, should auto search if it is empty")
-	mode          = flag.String("mode", "", "the mode of running")
+	is_print    = flag.Bool("print", false, "print search paths while config is not found")
+	RootDir     = flag.String("root", ".", "the root directory")
+	config_file = flag.String("config", "", "the config file path")
+	pre_start   = flag.String("pre_start", "pre_start.bat", "the name of pre start")
+	post_finish = flag.String("post_finish", "post_finish.bat", "the name of post finish")
+	java_path   = flag.String("java_path", "", "the path of java, should auto search if it is empty")
+	mode        = flag.String("mode", "", "the mode of running")
 
 	manager_exporter = &Exporter{}
 )

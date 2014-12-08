@@ -107,15 +107,15 @@ func (self *Manager) Stop() {
 	}
 }
 
-func (self *Manager) RunForever() {
+func (self *Manager) RunForever(listenAddress string) {
 	e := self.Start()
 	if nil != e {
 		goto end
 	}
 	http.Handle("/", self)
-	log.Println("[daemontools] serving at '" + *ListenAddress + "'")
-	if e := http.ListenAndServe(*ListenAddress, nil); nil != e {
-		log.Println("[daemontools] fail to listen at '"+*ListenAddress+"'", e)
+	log.Println("[daemontools] serving at '" + listenAddress + "'")
+	if e := http.ListenAndServe(listenAddress, nil); nil != e {
+		log.Println("[daemontools] fail to listen at '"+listenAddress+"'", e)
 	}
 	self.Stop()
 end:
