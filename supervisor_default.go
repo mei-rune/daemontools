@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -328,17 +327,11 @@ func (self *supervisor_default) run(cb func()) {
 	self.cond.L.Unlock()
 	is_locked = false
 
-	go cmd.Wait()
-	state, e := cmd.Process.Wait()
+	e = cmd.Wait()
 	if nil != e {
 		self.logString(fmt.Sprintf("[sys] wait process failed - %v\r\n", e))
 		return
 	}
-	if !state.Success() {
-		e = &exec.ExitError{state}
-		self.logString(fmt.Sprintf("[sys] wait process failed - %v\r\n", e))
-		return
-	}
 
-	self.logString("[sys] process is exited\r\n")
+	self.logString("[sys] process is exited.\r\n")
 }
