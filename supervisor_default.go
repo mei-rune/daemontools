@@ -333,7 +333,7 @@ func (self *supervisor_default) run(cb func()) {
 		ch <- cmd.Wait()
 	}()
 
-	tricker := time.NewTicker(10 * time.Minute)
+	tricker := time.NewTicker(1 * time.Minute)
 	defer tricker.Stop()
 	is_stopped := false
 	for !is_stopped {
