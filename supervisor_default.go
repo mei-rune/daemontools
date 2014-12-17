@@ -18,11 +18,21 @@ type supervisor_default struct {
 
 	proc_status int32
 	pid         int
-	stdin       io.Writer
+	stdin       io.WriteCloser
 
 	lock sync.Mutex
 	cond *sync.Cond
 	once sync.Once
+}
+
+func (self *supervisor_default) closeStdin() {
+	self.cond.L.Lock()
+	defer self.cond.L.Unlock()
+	if nil == self.stdin {
+		return
+	}
+	self.stdin.Close()
+	self.stdin = nil
 }
 
 func (self *supervisor_default) stats() map[string]interface{} {
@@ -175,6 +185,10 @@ func (self *supervisor_default) killByConsole(pid int) (bool, string) {
 			return errors.New("stdin is not redirect.")
 		}
 
+		defer func() {
+			self.stdin.Close()
+			self.stdin = nil
+		}()
 		for _, s := range self.stop_cmd.arguments {
 			_, e := self.stdin.Write([]byte(s + "\r\n"))
 			if nil != e {
@@ -299,7 +313,7 @@ func (self *supervisor_default) run(cb func()) {
 		cmd.Stderr = wrapped
 	}
 
-	var in io.Writer = nil
+	var in io.WriteCloser = nil
 	var e error = nil
 	if nil != self.stop_cmd && "__console__" == self.stop_cmd.proc {
 		in, e = cmd.StdinPipe()
@@ -343,6 +357,7 @@ func (self *supervisor_default) run(cb func()) {
 		case <-tricker.C:
 			if !IsInProcessList(self.pid, "") {
 				is_stopped = true
+				self.closeStdin()
 			}
 		}
 	}
