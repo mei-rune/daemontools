@@ -327,7 +327,25 @@ func (self *supervisor_default) run(cb func()) {
 	self.cond.L.Unlock()
 	is_locked = false
 
-	e = cmd.Wait()
+	// cmd.Wait() may blocked for ever in the win32.
+	ch := make(chan error, 3)
+	go func() {
+		ch <- cmd.Wait()
+	}()
+
+	tricker := time.NewTicker(10 * time.Minute)
+	defer tricker.Stop()
+	is_stopped := false
+	for !is_stopped {
+		select {
+		case e = <-ch:
+			is_stopped = true
+		case <-tricker.C:
+			if !IsInProcessList(self.pid, "") {
+				is_stopped = true
+			}
+		}
+	}
 	if nil != e {
 		self.logString(fmt.Sprintf("[sys] wait process failed - %v\r\n", e))
 		return

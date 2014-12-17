@@ -1,11 +1,14 @@
 package daemontools
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/mitchellh/go-ps"
@@ -71,6 +74,75 @@ func processExists(pid int, image string) bool {
 		panic(e)
 	}
 
+	if nil == pr {
+		return false
+	}
+
+	if "" != image && !strings.Contains(strings.ToLower(pr.Executable()), strings.ToLower(image)) {
+		return false
+	}
+	return true
+}
+
+var procs_lock sync.Mutex
+var procs_list []ps.Process
+
+func init() {
+	time.AfterFunc(1*time.Minute, ListAllProcess)
+}
+
+func ListAllProcess() {
+	defer func() {
+		if e := recover(); nil != e {
+			var buffer bytes.Buffer
+			buffer.WriteString(fmt.Sprintf("[panic] crashed with error - %s\r\n", e))
+			for i := 1; ; i += 1 {
+				_, file, line, ok := runtime.Caller(i)
+				if !ok {
+					break
+				}
+				buffer.WriteString(fmt.Sprintf("    %s:%d\r\n", file, line))
+			}
+			log.Println(buffer.String())
+		}
+		defer time.AfterFunc(5*time.Minute, ListAllProcess)
+	}()
+
+	prs, e := ps.Processes()
+	if nil != e {
+		prs = nil
+		log.Println("failed to list all processes,", e)
+	}
+	procs_lock.Lock()
+	procs_list = prs
+	procs_lock.Unlock()
+}
+
+func IsInProcessList(pid int, image string) bool {
+	procs_lock.Lock()
+	local_proces := procs_list
+	procs_lock.Unlock()
+
+	if nil == local_proces {
+		pr, e := os.FindProcess(pid)
+		if nil != e {
+			return true
+		}
+		if nil == pr {
+			return false
+		}
+
+		pr.Release()
+		return true
+	}
+
+	var pr ps.Process
+	for _, p := range local_proces {
+		if pr.Pid() == pid {
+			pr = p
+			break
+		}
+	}
 	if nil == pr {
 		return false
 	}
