@@ -138,7 +138,7 @@ func IsInProcessList(pid int, image string) bool {
 
 	var pr ps.Process
 	for _, p := range local_proces {
-		if pr.Pid() == pid {
+		if p.Pid() == pid {
 			pr = p
 			break
 		}
