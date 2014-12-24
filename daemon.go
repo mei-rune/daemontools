@@ -476,7 +476,6 @@ func loadCommand(args []map[string]interface{}) (*command, error) {
 }
 
 func loadJavaArguments(arguments []string, args []map[string]interface{}) ([]string, error) {
-
 	var results []string
 
 	java_ms := stringWithArguments(args, "java_mem_mix", "")
@@ -487,6 +486,7 @@ func loadJavaArguments(arguments []string, args []map[string]interface{}) ([]str
 	if "" != java_mx {
 		results = append(results, "-Xmx"+java_mx)
 	}
+
 	cp := stringsWithArguments(args, "java_classpath", ";", nil, false)
 	if nil != cp && 0 != len(cp) {
 		var classpath []string

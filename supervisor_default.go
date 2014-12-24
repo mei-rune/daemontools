@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"runtime"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -358,6 +359,7 @@ func (self *supervisor_default) run(cb func()) {
 			if !IsInProcessList(self.pid, "") {
 				is_stopped = true
 				self.closeStdin()
+				self.logString("[sys] process pid('" + strconv.FormatInt(int64(self.pid), 10) + "') is not found.\r\n")
 			}
 		}
 	}

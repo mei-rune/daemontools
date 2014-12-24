@@ -119,22 +119,13 @@ func ListAllProcess() {
 }
 
 func IsInProcessList(pid int, image string) bool {
+	if processExists(pid, image) {
+		return true
+	}
+
 	procs_lock.Lock()
 	local_proces := procs_list
 	procs_lock.Unlock()
-
-	if nil == local_proces {
-		pr, e := os.FindProcess(pid)
-		if nil != e {
-			return true
-		}
-		if nil == pr {
-			return false
-		}
-
-		pr.Release()
-		return true
-	}
 
 	var pr ps.Process
 	for _, p := range local_proces {
