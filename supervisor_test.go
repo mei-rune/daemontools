@@ -285,7 +285,7 @@ func TestStopByNoStop(t *testing.T) {
 			killTimeout: 3 * time.Second,
 			out:         &buffer,
 			start_cmd: &command{proc: "go",
-				arguments: []string{"run", filepath.Join(wd, "mock", "echo.go"), "TestStopByConsole"}}}}
+				arguments: []string{"run", filepath.Join(wd, "mock", "run_forever.go"), "run_forever"}}}}
 
 	s.start()
 
