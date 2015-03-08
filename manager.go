@@ -16,6 +16,7 @@ type Manager struct {
 	pre_start_path   string
 	post_finish_path string
 	mode             string
+	skipped          []string
 }
 
 func (self *Manager) retry(name string) error {
@@ -30,10 +31,41 @@ func (self *Manager) stop(name string) error {
 	return errors.New("not implemented")
 }
 
+func (self *Manager) Enable(name string) {
+	skipped := make([]string, 0, len(self.skipped))
+	for _, nm := range self.skipped {
+		if nm == name {
+			continue
+		}
+		skipped = append(skipped, name)
+	}
+	self.skipped = skipped
+}
+
+func (self *Manager) Disable(name string) {
+	self.skipped = append(self.skipped, name)
+}
+
+func (self *Manager) IsSipped(name string) bool {
+	if 0 == len(self.skipped) {
+		return false
+	}
+	for _, nm := range self.skipped {
+		if nm == name {
+			return true
+		}
+	}
+	return false
+}
+
 func (self *Manager) Stats() interface{} {
-	res := make([]interface{}, len(self.supervisors))
-	for i, s := range self.supervisors {
-		res[i] = s.stats()
+	res := make([]interface{}, 0, len(self.supervisors))
+	for _, s := range self.supervisors {
+		if self.IsSipped(s.name()) {
+			continue
+		}
+
+		res = append(res, s.stats())
 	}
 	return map[string]interface{}{"processes": res,
 		"version":  "1.0",
@@ -67,6 +99,9 @@ func (self *Manager) Start() error {
 		return e
 	}
 	for _, s := range self.supervisors {
+		if self.IsSipped(s.name()) {
+			continue
+		}
 		if !s.isMode(self.mode) {
 			continue
 		}
@@ -74,6 +109,10 @@ func (self *Manager) Start() error {
 	}
 
 	for _, s := range self.supervisors {
+		if self.IsSipped(s.name()) {
+			continue
+		}
+
 		if !s.isMode(self.mode) {
 			continue
 		}
@@ -86,6 +125,10 @@ func (self *Manager) Start() error {
 
 func (self *Manager) Stop() {
 	for _, s := range self.supervisors {
+		if self.IsSipped(s.name()) {
+			continue
+		}
+
 		if !s.isMode(self.mode) {
 			continue
 		}
@@ -93,6 +136,10 @@ func (self *Manager) Stop() {
 	}
 
 	for _, s := range self.supervisors {
+		if self.IsSipped(s.name()) {
+			continue
+		}
+
 		if !s.isMode(self.mode) {
 			continue
 		}
