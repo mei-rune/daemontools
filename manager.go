@@ -113,11 +113,12 @@ func (self *Manager) IsSipped(name string) bool {
 func (self *Manager) Stats() interface{} {
 	res := make([]interface{}, 0, len(self.supervisors))
 	for _, s := range self.supervisors {
-		//if self.IsSipped(s.name()) {
-		//	continue
-		//}
+		values := s.stats()
+		if self.IsSipped(s.name()) {
+			values["is_started"] = false
+		}
 
-		res = append(res, s.stats())
+		res = append(res, values)
 	}
 	return map[string]interface{}{"processes": res,
 		"version":  "1.0",
@@ -241,7 +242,7 @@ func (self *Manager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			//http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(statikFS)))
-			self.fs = http.FileServer(statikFS)
+			self.fs = http.StripPrefix("/", http.FileServer(statikFS))
 		}
 		self.fs.ServeHTTP(w, r)
 		return
