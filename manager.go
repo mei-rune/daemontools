@@ -1,12 +1,35 @@
 package daemontools
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
-
+	"regexp"
 	"strings"
+
+	"github.com/rakyll/statik/fs"
+	_ "github.com/runner-mei/daemontools/statik"
+)
+
+var (
+	stop_by_id_list = []*regexp.Regexp{regexp.MustCompile(`^/?[^/]+/stop/?$`),
+		regexp.MustCompile(`^/?daemons/[^/]+/stop/?$`),
+		regexp.MustCompile(`^/?daemons/daemons/[^/]+/stop/?$`)}
+
+	start_by_id_list = []*regexp.Regexp{regexp.MustCompile(`^/?[^/]+/start/?$`),
+		regexp.MustCompile(`^/?daemons/[^/]+/start/?$`),
+		regexp.MustCompile(`^/?daemons/daemons/[^/]+/start/?$`)}
+
+	restart_by_id_list = []*regexp.Regexp{regexp.MustCompile(`^/?[^/]+/restart/?$`),
+		regexp.MustCompile(`^/?daemons/[^/]+/restart/?$`),
+		regexp.MustCompile(`^/?daemons/daemons/[^/]+/restart/?$`)}
+
+	job_id_list = []*regexp.Regexp{regexp.MustCompile(`^/?[^/]+/?$`),
+		regexp.MustCompile(`^/?daemons/[^/]+/?$`),
+		regexp.MustCompile(`^/?daemons/daemons/[^/]+/?$`)}
 )
 
 type Manager struct {
@@ -17,18 +40,47 @@ type Manager struct {
 	post_finish_path string
 	mode             string
 	skipped          []string
+	fs               http.Handler
+}
+
+func (self *Manager) SetFs(fs http.Handler) {
+	self.fs = fs
 }
 
 func (self *Manager) retry(name string) error {
-	return errors.New("not implemented")
+	for _, sp := range self.supervisors {
+		if sp.name() == name {
+			sp.stop()
+			return nil
+		}
+	}
+	log.Println("[system] kill '" + name + "'")
+	return errors.New(name + " isn't found.")
 }
 
 func (self *Manager) start(name string) error {
-	return errors.New("not implemented")
+	self.Enable(name)
+	log.Println("[system] enable '" + name + "'")
+	for _, sp := range self.supervisors {
+		if sp.name() == name {
+			sp.start()
+			return nil
+		}
+	}
+	return errors.New(name + " isn't found.")
 }
 
 func (self *Manager) stop(name string) error {
-	return errors.New("not implemented")
+	self.Disable(name)
+
+	log.Println("[system] disable '" + name + "'")
+	for _, sp := range self.supervisors {
+		if sp.name() == name {
+			sp.stop()
+			return nil
+		}
+	}
+	return errors.New(name + " isn't found.")
 }
 
 func (self *Manager) Enable(name string) {
@@ -61,9 +113,9 @@ func (self *Manager) IsSipped(name string) bool {
 func (self *Manager) Stats() interface{} {
 	res := make([]interface{}, 0, len(self.supervisors))
 	for _, s := range self.supervisors {
-		if self.IsSipped(s.name()) {
-			continue
-		}
+		//if self.IsSipped(s.name()) {
+		//	continue
+		//}
 
 		res = append(res, s.stats())
 	}
@@ -175,73 +227,53 @@ end:
 func (self *Manager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		switch r.URL.Path {
-		case "/", "/index.html", "/index.htm", "/daemons", "/daemons/":
-			indexHandler(w, r, self)
-			return
-		case "/static/daemons/bootstrap.css":
-			bootstrapCssHandler(w, r)
-			return
-		case "/static/daemons/bootstrap_modal.js":
-			bootstrapModalJsHandler(w, r)
-			return
-		case "/static/daemons/bootstrap_popover.js":
-			bootstrapPopoverJsHandler(w, r)
-			return
-		case "/static/daemons/bootstrap_tab.js":
-			bootstrapTabJsHandler(w, r)
-			return
-		case "/static/daemons/bootstrap_tooltip.js":
-			bootstrapTooltipJsHandler(w, r)
-			return
-		case "/static/daemons/dj_mon.css":
-			djmonCssHandler(w, r)
-			return
-		case "/static/daemons/dj_mon.js":
-			djmonJsHandler(w, r)
-			return
-		case "/static/daemons/jquery.min.js":
-			jqueryJsHandler(w, r)
-			return
-		case "/static/daemons/mustache.js":
-			mustascheJsHandler(w, r)
+		if "/status" == r.URL.Path {
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(self.Stats())
 			return
 		}
+
+		if nil == self.fs {
+			statikFS, err := fs.New()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				io.WriteString(w, err.Error())
+				return
+			}
+			//http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(statikFS)))
+			self.fs = http.FileServer(statikFS)
+		}
+		self.fs.ServeHTTP(w, r)
+		return
 	case "POST":
-		for _, retry := range restart_by_id_list {
-			if retry.MatchString(r.URL.Path) {
-				ss := strings.Split(r.URL.Path, "/")
-				e := self.retry(ss[len(ss)-2])
-				if nil == e {
-					indexHandlerWithMessage(w, r, self, "success", "The job has been queued for a re-run")
+		ss := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+		if 2 == len(ss) {
+			switch strings.ToLower(ss[1]) {
+			case "restart":
+				if e := self.retry(ss[0]); nil != e {
+					w.WriteHeader(http.StatusInternalServerError)
+					io.WriteString(w, e.Error())
 				} else {
-					indexHandlerWithMessage(w, r, self, "error", e.Error())
+					w.WriteHeader(http.StatusOK)
+					io.WriteString(w, "OK")
 				}
 				return
-			}
-		}
-
-		for _, retry := range start_by_id_list {
-			if retry.MatchString(r.URL.Path) {
-				ss := strings.Split(r.URL.Path, "/")
-				e := self.start(ss[len(ss)-2])
-				if nil == e {
-					indexHandlerWithMessage(w, r, self, "success", "The job has been queued for a re-run")
+			case "start":
+				if e := self.start(ss[0]); nil != e {
+					w.WriteHeader(http.StatusInternalServerError)
+					io.WriteString(w, e.Error())
 				} else {
-					indexHandlerWithMessage(w, r, self, "error", e.Error())
+					w.WriteHeader(http.StatusOK)
+					io.WriteString(w, "OK")
 				}
 				return
-			}
-		}
-
-		for _, job_id := range stop_by_id_list {
-			if job_id.MatchString(r.URL.Path) {
-				ss := strings.Split(r.URL.Path, "/")
-				e := self.stop(ss[len(ss)-2])
-				if nil == e {
-					indexHandlerWithMessage(w, r, self, "success", "The job was deleted")
+			case "stop":
+				if e := self.stop(ss[0]); nil != e {
+					w.WriteHeader(http.StatusInternalServerError)
+					io.WriteString(w, e.Error())
 				} else {
-					indexHandlerWithMessage(w, r, self, "error", e.Error())
+					w.WriteHeader(http.StatusOK)
+					io.WriteString(w, "OK")
 				}
 				return
 			}

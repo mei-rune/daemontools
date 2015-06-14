@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+
+  <head lang='en'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!--[if lt IE 9]>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/es5-shim/4.0.5/es5-shim.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script>html5.addElements('daemontools')</script>
+    <![endif]-->
+
+    <link href="dj_mon.css" media="screen, projection" rel="stylesheet" type="text/css" />
+    <link href="bootstrap.css" media="screen, projection" rel="stylesheet" type="text/css" />
+
+    <script src="jquery.min.js" type="text/javascript"></script>
+    <script src="dj_mon.js" type="text/javascript"></script>
+    <script src="bootstrap_tooltip.js" type="text/javascript"></script>
+    <script src="bootstrap_alert.js" type="text/javascript"></script>
+    <script src="bootstrap_tab.js" type="text/javascript"></script>
+    <script src="bootstrap_popover.js" type="text/javascript"></script>
+    <script src="bootstrap_modal.js" type="text/javascript"></script>
+    <script src="bootstrap_alert.js" type="text/javascript"></script>
+    <script src="mustache.js" type="text/javascript"></script>
+  </head>
+
+  <body>
+
+    <script id='daemontools_message_template' type='text/x-handlebars-template'>
+      <div class="alert alert-{{level}} alert-dismissible" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        {{data}}
+      </div>
+    </script>
+
+    <script id='daemontools_app_template' type='text/x-handlebars-template'>
+      <table class='table table-striped' id='jobs-table'>
+        <thead>
+          <tr>
+          <th>name</th>
+          <th>pid</th>
+          <th>status</th>
+          <th>retries</th>
+          <th>last error</th>
+          <th class='date'>run at</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#processes}}
+          <tr>
+            <td><div class='label label-info'>{{name}}</div></td>
+            <td> {{pid}} </td>
+            <td> {{status}} </td>
+            <td> {{retries}} </td>
+            <td> <a href="#last_error_template" data-content="{{last_error}}" rel='modal' title='Last Error'> {{last_error_summary}} </a> 
+             <div class='modal hide'>
+              <div class='modal-header'>
+              <button class='close' data-dismiss='modal' type='button'>¡Á</button>
+              <h3>Last Error</h3>
+              </div>
+
+              <div class='modal-body'><code>{{last_error}}</code></div>
+              <div class='modal-footer'>
+                <a href="#" class="btn btn-primary" data-dismiss="modal">Close</a>
+              </div>
+            </div>
+            </td>
+            <td class='date'>
+              {{#owned}}
+              {{run_at}}
+              <form accept-charset="UTF-8" action="{{name}}/restart" class="form-inline" method="post"><div style="margin:0;padding:0;display:inline">
+                <input name="utf8" type="hidden" value="&#x2713;" />
+                <input class="btn btn-info btn-mini" name="commit" type="submit" value="Restart" />
+              </form>
+              {{#is_started}}
+              <form accept-charset="UTF-8" action="{{name}}/stop" class="form-inline" method="post">
+                <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="&#x2713;" />
+                  <input name="_method" type="hidden" value="post" />
+                </div>
+                <input class="btn btn-danger btn-mini" name="commit" type="submit" value="Stop" />
+              </form>
+              {{/is_started}}
+              {{^is_started}}
+              <form accept-charset="UTF-8" action="{{name}}/start" class="form-inline" method="post">
+                <div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="&#x2713;" />
+                  <input name="_method" type="hidden" value="post" />
+                </div>
+                <input class="btn btn-danger btn-mini" name="commit" type="submit" value="start" />
+              </form>
+              {{/is_started}}
+              {{/owned}}
+            </td>
+          </tr>
+          {{/processes}}
+        </tbody>
+      </table>
+    </script>
+    <header>
+      <div class='navbar navbar-fixed-top'>
+        <div class='navbar-inner'>
+          <div class='container'>
+            <div class='pull-left'>
+              <a href="http://github.com/runner-mei/daemontools" class="brand">Daemontools</a>
+            </div>
+            <div class='pull-right'>
+              <a href="#daemontools_settings_template" class="btn btn-primary btn-mini" data-content="{}" id="settings" rel="modal">Settings</a>
+            </div>
+            <div class='pull-right'>
+              <div id='dj-counts-view'></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class='container centered' id="daemontools-message-view"></div>
+
+
+    <div class='container' id='daemontools-app-view'>
+    </div>
+
+    <script id='daemontools_settings_template' type='text/x-handlebars-template'>
+      <div class='modal hide'>
+        <div class='modal-header'>
+          <button class='close' data-dismiss='modal' type='button'>×</button>
+          <h3> Settings </h3>
+        </div>
+
+        <div class='modal-body'>
+          <table class='table table-bordered table-striped'>
+            <tr>
+              <td>version</td>
+              <td><code>{{.version}}</code></td>
+            </tr>
+            {{range $index, $element := .settings}}
+            <tr>
+              <td>{{$index}}</td>
+              <td><code>{{$element}}</code></td>
+            </tr>
+            {{end}}
+
+          </table>
+        </div>
+        <div class='modal-footer'> <a href="#" class="btn btn-primary" data-dismiss="modal">Close</a> </div>
+      </div>
+    </script>
+  </body>
+
+</html>
