@@ -47,6 +47,14 @@ func (self *Manager) SetFs(fs http.Handler) {
 	self.fs = fs
 }
 
+func (self *Manager) SetMode(mode string) {
+	self.mode = mode
+}
+
+func (self *Manager) Mode() string {
+	return self.mode
+}
+
 func (self *Manager) retry(name string) error {
 	for _, sp := range self.supervisors {
 		if sp.name() == name {
@@ -182,9 +190,9 @@ func (self *Manager) Stop() {
 			continue
 		}
 
-		if !s.isMode(self.mode) {
-			continue
-		}
+		//if !s.isMode(self.mode) {
+		//	continue
+		//}
 		s.stop()
 	}
 
@@ -193,9 +201,9 @@ func (self *Manager) Stop() {
 			continue
 		}
 
-		if !s.isMode(self.mode) {
-			continue
-		}
+		// if !s.isMode(self.mode) {
+		// 	continue
+		// }
 
 		if err := s.untilStopped(); nil != err {
 			fmt.Println(fmt.Sprintf("stop '%v' failed, %v", s.name(), err))
