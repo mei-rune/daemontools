@@ -293,7 +293,7 @@ func loadConfigs(root, file, execute string) (*Manager, error) {
 	}
 
 	for _, s := range supervisors {
-		out, e := newRotateFile(filepath.Clean(abs(filepath.Join(logPath, s.name()+".log"))), maxBytes, maxNum)
+		out, e := NewRotateFile(filepath.Clean(abs(filepath.Join(logPath, s.name()+".log"))), maxBytes, maxNum)
 		if nil != e {
 			return nil, errors.New("open log failed for '" + s.name() + "', " + e.Error())
 		}

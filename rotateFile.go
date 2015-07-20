@@ -52,7 +52,7 @@ func (w *rotateFile) Close() error {
 	return w.file.Close()
 }
 
-func newRotateFile(fname string, maxBytes, maxNum int) (*rotateFile, error) {
+func NewRotateFile(fname string, maxBytes, maxNum int) (*rotateFile, error) {
 	w := &rotateFile{filename: fname, maxBytes: maxBytes, currentBytes: 0, maxNum: maxNum}
 
 	if err := w.intRotate(); nil != err {
