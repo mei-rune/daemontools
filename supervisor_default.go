@@ -296,7 +296,7 @@ func (self *supervisor_default) run(cb func()) {
 	self.logString("[sys] -------------------- proc start --------------------\r\n")
 	atomic.StoreInt32(&self.proc_status, PROC_STARTING)
 
-	cmd := self.start_cmd.command()
+	cmd := self.start_cmd.command(self.mode)
 	if 0 == len(self.success_flag) {
 		if *is_print {
 			cmd.Stdout = os.Stdout

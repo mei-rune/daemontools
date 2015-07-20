@@ -154,7 +154,7 @@ func (self *supervisorWithPidfile) interrupt() {
 }
 
 func (self *supervisorWithPidfile) run(cb func()) {
-	cmd := self.start_cmd.command()
+	cmd := self.start_cmd.command(self.mode)
 	//if 0 == len(self.prompt) {
 	if *is_print {
 		cmd.Stdout = os.Stdout

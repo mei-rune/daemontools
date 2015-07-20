@@ -78,7 +78,7 @@ type command struct {
 	directory    string
 }
 
-func (self *command) command() *exec.Cmd {
+func (self *command) command(mode string) *exec.Cmd {
 	switch self.proc {
 	case "__kill___", "", "__signal__", "__console__":
 		return &exec.Cmd{Path: self.proc}
@@ -86,15 +86,17 @@ func (self *command) command() *exec.Cmd {
 		cmd := exec.Command(self.proc, self.arguments...)
 		cmd.Dir = self.directory
 		cmd.Env = os.Environ()
-		if nil != self.environments && 0 != len(self.environments) {
-			os_env := os.Environ()
-			environments := make([]string, 0, len(self.environments)+len(os_env))
+		os_env := os.Environ()
+		environments := make([]string, 0, len(self.environments)+len(os_env))
+		if 0 != len(self.environments) {
 			environments = append(environments, self.environments...)
-			environments = append(environments, os_env...)
-			cmd.Env = environments
-		} else {
-			cmd.Env = os.Environ()
 		}
+
+		if "" != mode {
+			environments = append(environments, "DAEMON_RUN_MODE="+mode)
+		}
+		environments = append(environments, os_env...)
+		cmd.Env = environments
 		return cmd
 	}
 }
@@ -207,7 +209,7 @@ func (self *supervisorBase) killByCmd(pid int) (bool, string) {
 	pr, e := os.FindProcess(pid)
 	if nil != e {
 		if os.IsPermission(e) {
-			e = execWithTimeout(self.killTimeout, self.stop_cmd.command())
+			e = execWithTimeout(self.killTimeout, self.stop_cmd.command(self.mode))
 			if nil != e {
 				return false, e.Error()
 			}
@@ -218,7 +220,7 @@ func (self *supervisorBase) killByCmd(pid int) (bool, string) {
 	defer pr.Release()
 
 	started := time.Now()
-	e = execWithTimeout(self.killTimeout, self.stop_cmd.command())
+	e = execWithTimeout(self.killTimeout, self.stop_cmd.command(self.mode))
 	if nil != e {
 		return false, e.Error()
 	}
