@@ -7,6 +7,7 @@ import (
 	"expvar"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -63,7 +64,7 @@ func New() (*Manager, error) {
 	}
 
 	if err := createPidFile(*pidFile, nm); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		os.Exit(1)
 	}
 	defer removePidFile(*pidFile)
@@ -84,12 +85,12 @@ func New() (*Manager, error) {
 	if !DirExists(*RootDir) {
 		return nil, errors.New("root directory '" + *RootDir + "' is not exist.")
 	} else {
-		fmt.Println("root directory is '" + *RootDir + "'.")
+		log.Println("root directory is '" + *RootDir + "'.")
 	}
 
 	e := os.Chdir(*RootDir)
 	if nil != e {
-		fmt.Println("change current dir to \"" + *RootDir + "\"")
+		log.Println("change current dir to \"" + *RootDir + "\"")
 	}
 
 	file := ""
@@ -116,9 +117,9 @@ func New() (*Manager, error) {
 		}
 
 		if !found && *is_print {
-			fmt.Println("config file is not found:")
+			log.Println("config file is not found:")
 			for _, nm := range files {
-				fmt.Println("    ", nm)
+				log.Println("    ", nm)
 			}
 		}
 	} else {
@@ -131,7 +132,7 @@ func New() (*Manager, error) {
 
 	if 0 == len(*java_path) {
 		*java_path = search_java_home(*RootDir)
-		fmt.Println("[warn] java is", *java_path)
+		log.Println("[warn] java is", *java_path)
 	}
 
 	mgr, e := loadConfigs(*RootDir, file, nm)
@@ -200,9 +201,9 @@ func execute(pa string) error {
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 
-	fmt.Println("===================== output begin =====================")
+	log.Println("===================== output begin =====================")
 	defer func() {
-		fmt.Println("=====================  output end  =====================")
+		log.Println("=====================  output end  =====================")
 	}()
 	return cmd.Run()
 }
@@ -217,7 +218,7 @@ func loadConfigs(root, file, execute string) (*Manager, error) {
 			return nil, e
 		}
 	} else {
-		fmt.Println("[warn] the default config file is not found.")
+		log.Println("[warn] the default config file is not found.")
 	}
 
 	if nil == arguments {
@@ -261,7 +262,7 @@ func loadConfigs(root, file, execute string) (*Manager, error) {
 			if nil != e {
 				return nil, errors.New("load '" + nm + "' failed, " + e.Error())
 			} else {
-				fmt.Println("load '" + nm + "' is ok.")
+				log.Println("load '" + nm + "' is ok.")
 			}
 		}
 	}
@@ -322,7 +323,7 @@ func loadConfig(file string, args map[string]interface{}, supervisors []supervis
 	//var attributes map[string]interface{}
 	//e = json.Unmarshal(buffer.Bytes(), &attributes)
 	if nil != e {
-		fmt.Println(buffer.String())
+		log.Println(buffer.String())
 		return nil, errors.New("ummarshal file failed, " + e.Error())
 	}
 	switch value := v.(type) {
@@ -404,7 +405,7 @@ func loadSupervisor(file string, arguments []map[string]interface{}, supervisors
 	if 0 == len(success_flag) {
 		retries1 := intWithDefault(arguments[0], "retries", 0)
 		if retries1 > 0 {
-			fmt.Println("[warn] retries will ignore while success_flag is missing in '" + name + "' at '" + file + "'.")
+			log.Println("[warn] retries will ignore while success_flag is missing in '" + name + "' at '" + file + "'.")
 		}
 	}
 

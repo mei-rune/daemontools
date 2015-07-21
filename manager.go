@@ -135,7 +135,7 @@ func (self *Manager) Stats() interface{} {
 
 func (self *Manager) beforeStart() error {
 	if FileExists(self.pre_start_path) {
-		fmt.Println("execute '" + self.pre_start_path + "'")
+		log.Println("execute '" + self.pre_start_path + "'")
 		e := execute(self.pre_start_path)
 		if nil != e {
 			return errors.New("execute 'pre_start' failed, " + e.Error())
@@ -146,7 +146,7 @@ func (self *Manager) beforeStart() error {
 
 func (self *Manager) afterStop() error {
 	if FileExists(self.post_finish_path) {
-		fmt.Println("execute '" + self.post_finish_path + "'")
+		log.Println("execute '" + self.post_finish_path + "'")
 		e := execute(self.post_finish_path)
 		if nil != e {
 			return errors.New("execute 'post_finish' failed, " + e.Error())
@@ -206,12 +206,12 @@ func (self *Manager) Stop() {
 		// }
 
 		if err := s.untilStopped(); nil != err {
-			fmt.Println(fmt.Sprintf("stop '%v' failed, %v", s.name(), err))
+			log.Println(fmt.Sprintf("stop '%v' failed, %v", s.name(), err))
 		}
 	}
 
 	if e := self.afterStop(); nil != e {
-		fmt.Println(e)
+		log.Println(e)
 	}
 }
 
@@ -228,8 +228,8 @@ func (self *Manager) RunForever(listenAddress string) {
 	self.Stop()
 end:
 	if nil != e {
-		fmt.Println("************************************************")
-		fmt.Println(e)
+		log.Println("************************************************")
+		log.Println(e)
 	}
 }
 
