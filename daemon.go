@@ -96,16 +96,16 @@ func Init() error {
 }
 
 func New() (*Manager, error) {
-	guess_files := []string{filepath.Clean(abs(filepath.Join(RootDir, Program+".conf"))),
-		filepath.Clean(abs(filepath.Join(RootDir, "etc", Program+".conf"))),
-		filepath.Clean(abs(filepath.Join(RootDir, "conf", Program+".conf"))),
-		filepath.Clean(abs(filepath.Join(RootDir, "daemon.conf"))),
-		filepath.Clean(abs(filepath.Join(RootDir, "etc", "daemon.conf"))),
-		filepath.Clean(abs(filepath.Join(RootDir, "conf", "daemon.conf"))),
-		filepath.Clean(abs(filepath.Join(RootDir, "data", "etc", Program+".conf"))),
-		filepath.Clean(abs(filepath.Join(RootDir, "data", "conf", Program+".conf"))),
-		filepath.Clean(abs(filepath.Join(RootDir, "data", "etc", "daemon.conf"))),
-		filepath.Clean(abs(filepath.Join(RootDir, "data", "conf", "daemon.conf")))}
+	guess_files := []string{filepath.Clean(abs(filepath.Join(RootDir, Program+".properties"))),
+		filepath.Clean(abs(filepath.Join(RootDir, "etc", Program+".properties"))),
+		filepath.Clean(abs(filepath.Join(RootDir, "conf", Program+".properties"))),
+		filepath.Clean(abs(filepath.Join(RootDir, "daemon.properties"))),
+		filepath.Clean(abs(filepath.Join(RootDir, "etc", "daemon.properties"))),
+		filepath.Clean(abs(filepath.Join(RootDir, "conf", "daemon.properties"))),
+		filepath.Clean(abs(filepath.Join(RootDir, "data", "etc", Program+".properties"))),
+		filepath.Clean(abs(filepath.Join(RootDir, "data", "conf", Program+".properties"))),
+		filepath.Clean(abs(filepath.Join(RootDir, "data", "etc", "daemon.properties"))),
+		filepath.Clean(abs(filepath.Join(RootDir, "data", "conf", "daemon.properties")))}
 
 	var files []string
 	for _, file := range guess_files {
@@ -137,10 +137,20 @@ func New() (*Manager, error) {
 		return nil, e
 	}
 
-	services_disabled := stringsWithDefault(mgr.settings, "services_disabled", ",", nil)
-	if len(services_disabled) > 0 {
-		for _, s := range services_disabled {
-			mgr.Disable(strings.TrimSpace(s))
+	if len(mgr.settings) > 0 {
+		for k, s := range mgr.settings {
+			if strings.HasSuffix(k, ".disabled") {
+				name := strings.TrimSpace(strings.TrimSuffix(k, ".disabled"))
+				switch strings.ToLower(fmt.Sprint(s)) {
+				case "1", "yes", "true":
+					mgr.Disable(name)
+				case "0", "no", "false":
+					mgr.Disable(name)
+				default:
+					log.Println("'" + k + "=" + fmt.Sprint(s) + "' is invalid.")
+					os.Exit(1)
+				}
+			}
 		}
 	}
 
@@ -594,12 +604,7 @@ func loadProperties(root string, files []string) (map[string]interface{}, error)
 			return nil, errors.New("generate config '" + file + "' failed, " + e.Error())
 		}
 
-		var arguments map[string]interface{}
-		e = json.Unmarshal(buffer.Bytes(), &arguments)
-		if nil != e {
-			return nil, errors.New("ummarshal config '" + file + "' failed, " + e.Error())
-		}
-
+		var arguments = readProperties(&buffer)
 		if len(arguments) > 0 {
 			for k, v := range arguments {
 				all_arguments[k] = v

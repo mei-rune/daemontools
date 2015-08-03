@@ -1,8 +1,11 @@
 package daemontools
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -342,4 +345,54 @@ func stringsWithArguments(arguments []map[string]interface{}, key, sep string, d
 		}
 	}
 	return defaultValue
+}
+
+func readProperties(r io.Reader) map[string]string {
+	cfg := map[string]string{}
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		ss := strings.SplitN(scanner.Text(), "#", 2)
+		//ss = strings.SplitN(ss[0], "//", 2)
+		s := strings.TrimSpace(ss[0])
+		if 0 == len(s) {
+			continue
+		}
+		ss = strings.SplitN(s, "=", 2)
+		if 2 != len(ss) {
+			continue
+		}
+
+		key := strings.TrimLeft(strings.TrimSpace(ss[0]), ".")
+		value := strings.TrimSpace(ss[1])
+		if 0 == len(key) {
+			continue
+		}
+		if 0 == len(value) {
+			continue
+		}
+		cfg[key] = os.ExpandEnv(value)
+	}
+
+	return expandAll(cfg)
+}
+
+func expandAll(cfg map[string]string) map[string]string {
+	remain := 0
+	expend := func(key string) string {
+		if value, ok := cfg[key]; ok {
+			return value
+		}
+		remain++
+		return os.Getenv(key)
+	}
+
+	for i := 0; i < 100; i++ {
+		for k, v := range cfg {
+			cfg[k] = os.Expand(v, expend)
+		}
+		if 0 == remain {
+			break
+		}
+	}
+	return cfg
 }

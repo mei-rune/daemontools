@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
 
 	"github.com/runner-mei/daemontools"
 )
@@ -16,10 +17,23 @@ func main() {
 		return
 	}
 
+	e := daemontools.Init()
+	if nil != e {
+		log.Println(e)
+		return
+	}
+
 	mgr, e := daemontools.New()
 	if nil != e {
 		log.Println(e)
 		return
 	}
+
+	if err := daemontools.CreatePidFile(daemontools.PidFile, daemontools.Program); err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	defer daemontools.RemovePidFile(daemontools.PidFile)
+
 	mgr.RunForever(*listenAddress)
 }
