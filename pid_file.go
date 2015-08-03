@@ -12,13 +12,13 @@ import (
 	"github.com/mitchellh/go-ps"
 )
 
-var pidFile *string
+var PidFile string
 
 func init() {
 	if "windows" == runtime.GOOS {
-		pidFile = flag.String("pid_file", "daemontools.pid", "File containing process PID")
+		flag.StringVar(&PidFile, "pid_file", "daemontools.pid", "File containing process PID")
 	} else {
-		pidFile = flag.String("pid_file", "/var/run/daemontools.pid", "File containing process PID")
+		flag.StringVar(&PidFile, "pid_file", "/var/run/daemontools.pid", "File containing process PID")
 	}
 }
 
@@ -32,7 +32,7 @@ func isPidInitialize() bool {
 	return ret
 }
 
-func createPidFile(pidFile, image string) error {
+func CreatePidFile(pidFile, image string) error {
 	if pidString, err := ioutil.ReadFile(pidFile); err == nil {
 		pid, err := strconv.Atoi(string(pidString))
 		if err == nil {
@@ -54,7 +54,7 @@ func createPidFile(pidFile, image string) error {
 	return err
 }
 
-func removePidFile(pidFile string) {
+func RemovePidFile(pidFile string) {
 	if err := os.Remove(pidFile); err != nil {
 		fmt.Printf("Error removing %s: %s\r\n", pidFile, err)
 	}

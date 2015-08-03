@@ -18,8 +18,9 @@ import (
 )
 
 var (
+	RootDir     = "."
+	Program     = "daemon"
 	is_print    = flag.Bool("print", false, "print search paths while config is not found")
-	RootDir     = flag.String("root", ".", "the root directory")
 	config_file = flag.String("config", "", "the config file path")
 	pre_start   = flag.String("pre_start", "pre_start.bat", "the name of pre start")
 	post_finish = flag.String("post_finish", "post_finish.bat", "the name of post finish")
@@ -28,6 +29,11 @@ var (
 
 	manager_exporter = &Exporter{}
 )
+
+func init() {
+	flag.StringVar(&RootDir, "root", ".", "the root directory")
+	Program = filepath.Base(os.Args[0])
+}
 
 func FileExists(nm string) bool {
 	fs, e := os.Stat(nm)
@@ -53,89 +59,80 @@ func abs(s string) string {
 	return r
 }
 
-func New() (*Manager, error) {
-	nm := filepath.Base(os.Args[0])
+func Init() error {
+	Program = filepath.Base(os.Args[0])
 	if !isPidInitialize() {
 		if "windows" == runtime.GOOS {
-			flag.Set("pid_file", nm+".pid")
+			flag.Set("pid_file", Program+".pid")
 		} else {
-			flag.Set("pid_file", "/var/run/"+nm+".pid")
+			flag.Set("pid_file", "/var/run/"+Program+".pid")
 		}
 	}
 
-	if err := createPidFile(*pidFile, nm); err != nil {
-		log.Println(err)
-		os.Exit(1)
-	}
-	defer removePidFile(*pidFile)
-
-	if "." == *RootDir {
-		*RootDir = abs(filepath.Dir(os.Args[0]))
+	if "." == RootDir {
+		RootDir = abs(filepath.Dir(os.Args[0]))
 		dirs := []string{abs(filepath.Dir(os.Args[0])), filepath.Join(abs(filepath.Dir(os.Args[0])), "..")}
 		for _, s := range dirs {
 			if DirExists(filepath.Join(s, "conf")) {
-				*RootDir = s
+				RootDir = s
 				break
 			}
 		}
 	} else {
-		*RootDir = abs(*RootDir)
+		RootDir = abs(RootDir)
 	}
 
-	if !DirExists(*RootDir) {
-		return nil, errors.New("root directory '" + *RootDir + "' is not exist.")
+	if !DirExists(RootDir) {
+		return errors.New("root directory '" + RootDir + "' is not exist.")
 	} else {
-		log.Println("root directory is '" + *RootDir + "'.")
+		log.Println("root directory is '" + RootDir + "'.")
 	}
 
-	e := os.Chdir(*RootDir)
+	e := os.Chdir(RootDir)
 	if nil != e {
-		log.Println("change current dir to \"" + *RootDir + "\"")
+		log.Println("change current dir to \"" + RootDir + "\"")
+	}
+	return nil
+}
+
+func New() (*Manager, error) {
+	guess_files := []string{filepath.Clean(abs(filepath.Join(RootDir, Program+".conf"))),
+		filepath.Clean(abs(filepath.Join(RootDir, "etc", Program+".conf"))),
+		filepath.Clean(abs(filepath.Join(RootDir, "conf", Program+".conf"))),
+		filepath.Clean(abs(filepath.Join(RootDir, "daemon.conf"))),
+		filepath.Clean(abs(filepath.Join(RootDir, "etc", "daemon.conf"))),
+		filepath.Clean(abs(filepath.Join(RootDir, "conf", "daemon.conf"))),
+		filepath.Clean(abs(filepath.Join(RootDir, "data", "etc", Program+".conf"))),
+		filepath.Clean(abs(filepath.Join(RootDir, "data", "conf", Program+".conf"))),
+		filepath.Clean(abs(filepath.Join(RootDir, "data", "etc", "daemon.conf"))),
+		filepath.Clean(abs(filepath.Join(RootDir, "data", "conf", "daemon.conf")))}
+
+	var files []string
+	for _, file := range guess_files {
+		if FileExists(file) {
+			files = append(files)
+		}
 	}
 
-	file := ""
-	if "" == *config_file {
-		program := filepath.Base(os.Args[0])
-		files := []string{filepath.Clean(abs(filepath.Join(*RootDir, program+".conf"))),
-			filepath.Clean(abs(filepath.Join(*RootDir, "etc", program+".conf"))),
-			filepath.Clean(abs(filepath.Join(*RootDir, "conf", program+".conf"))),
-			filepath.Clean(abs(filepath.Join(*RootDir, "daemon.conf"))),
-			filepath.Clean(abs(filepath.Join(*RootDir, "etc", "daemon.conf"))),
-			filepath.Clean(abs(filepath.Join(*RootDir, "conf", "daemon.conf"))),
-			filepath.Clean(abs(filepath.Join(*RootDir, "data", "etc", program+".conf"))),
-			filepath.Clean(abs(filepath.Join(*RootDir, "data", "conf", program+".conf"))),
-			filepath.Clean(abs(filepath.Join(*RootDir, "data", "etc", "daemon.conf"))),
-			filepath.Clean(abs(filepath.Join(*RootDir, "data", "conf", "daemon.conf")))}
-
-		found := false
-		for _, nm := range files {
-			if FileExists(nm) {
-				found = true
-				file = nm
-				break
-			}
-		}
-
-		if !found && *is_print {
-			log.Println("config file is not found:")
-			for _, nm := range files {
-				log.Println("    ", nm)
-			}
-		}
-	} else {
-		file = filepath.Clean(abs(*config_file))
+	if "" != *config_file {
+		file := filepath.Clean(abs(*config_file))
 		if !FileExists(file) {
 			return nil, errors.New("config '" + file + "' is not exists.")
-
+		}
+		files = append(files, file)
+	} else if len(files) <= 0 && *is_print {
+		log.Println("config file is not found:")
+		for _, nm := range guess_files {
+			log.Println("    ", nm)
 		}
 	}
 
 	if 0 == len(*java_path) {
-		*java_path = search_java_home(*RootDir)
+		*java_path = search_java_home(RootDir)
 		log.Println("[warn] java is", *java_path)
 	}
 
-	mgr, e := loadConfigs(*RootDir, file, nm)
+	mgr, e := loadConfigs(RootDir, Program, files)
 	if nil != e {
 		return nil, e
 	}
@@ -143,17 +140,17 @@ func New() (*Manager, error) {
 	expvar.Publish("supervisors", manager_exporter)
 	manager_exporter.Var = mgr
 
-	pre_start_path := filepath.Join(*RootDir, *pre_start)
+	pre_start_path := filepath.Join(RootDir, *pre_start)
 	if "pre_start.bat" == *pre_start {
 		if "windows" != runtime.GOOS {
-			pre_start_path = filepath.Join(*RootDir, "pre_start.sh")
+			pre_start_path = filepath.Join(RootDir, "pre_start.sh")
 		}
 	}
 
-	post_finish_path := filepath.Join(*RootDir, *post_finish)
+	post_finish_path := filepath.Join(RootDir, *post_finish)
 	if "post_finish.bat" == *post_finish {
 		if "windows" != runtime.GOOS {
-			post_finish_path = filepath.Join(*RootDir, "post_finish.sh")
+			post_finish_path = filepath.Join(RootDir, "post_finish.sh")
 		}
 	}
 
@@ -208,12 +205,12 @@ func execute(pa string) error {
 	return cmd.Run()
 }
 
-func loadConfigs(root, file, execute string) (*Manager, error) {
+func loadConfigs(root, execute string, files []string) (*Manager, error) {
 	var arguments map[string]interface{}
 	//"autostart_"
-	if 0 != len(file) {
+	if len(files) > 0 {
 		var e error
-		arguments, e = loadProperties(root, file)
+		arguments, e = loadProperties(root, files)
 		if nil != e {
 			return nil, e
 		}
@@ -222,12 +219,7 @@ func loadConfigs(root, file, execute string) (*Manager, error) {
 	}
 
 	if nil == arguments {
-		arguments = loadDefault(root, file)
-	} else {
-		arguments["root_dir"] = root
-		arguments["config_file"] = file
-		arguments["os"] = runtime.GOOS
-		arguments["arch"] = runtime.GOARCH
+		arguments = loadDefault(root, "")
 	}
 
 	if "" == execute {
@@ -301,7 +293,7 @@ func loadConfigs(root, file, execute string) (*Manager, error) {
 		s.setOutput(out)
 	}
 
-	return &Manager{settings_file: file, settings: arguments, supervisors: supervisors}, nil
+	return &Manager{settings_file: files[0], settings: arguments, supervisors: supervisors}, nil
 }
 
 func loadConfig(file string, args map[string]interface{}, supervisors []supervisor) ([]supervisor, error) {
@@ -569,37 +561,53 @@ func loadJavaArguments(arguments []string, args []map[string]interface{}) ([]str
 }
 
 func loadDefault(root, file string) map[string]interface{} {
+	file_dir := ""
+	if "" != file {
+		file_dir = filepath.Dir(file)
+	}
 	return map[string]interface{}{"root_dir": root,
-		"config_file": file,
-		"java":        *java_path,
-		"os":          runtime.GOOS,
-		"arch":        runtime.GOARCH}
+		"file_dir": file_dir,
+		"java":     *java_path,
+		"os":       runtime.GOOS,
+		"arch":     runtime.GOARCH}
 }
 
-func loadProperties(root, file string) (map[string]interface{}, error) {
-	t, e := template.ParseFiles(file)
-	if nil != e {
-		return nil, errors.New("read config '" + file + "' failed, " + e.Error())
-	}
-	args := loadDefault(root, file)
+func loadProperties(root string, files []string) (map[string]interface{}, error) {
+	var all_arguments = make(map[string]interface{})
+	for _, file := range files {
+		t, e := template.ParseFiles(file)
+		if nil != e {
+			return nil, errors.New("read config '" + file + "' failed, " + e.Error())
+		}
+		args := loadDefault(root, file)
 
-	var buffer bytes.Buffer
-	e = t.Execute(&buffer, args)
-	if nil != e {
-		return nil, errors.New("generate config '" + file + "' failed, " + e.Error())
+		var buffer bytes.Buffer
+		e = t.Execute(&buffer, args)
+		if nil != e {
+			return nil, errors.New("generate config '" + file + "' failed, " + e.Error())
+		}
+
+		var arguments map[string]interface{}
+		e = json.Unmarshal(buffer.Bytes(), &arguments)
+		if nil != e {
+			return nil, errors.New("ummarshal config '" + file + "' failed, " + e.Error())
+		}
+
+		if len(arguments) > 0 {
+			for k, v := range arguments {
+				all_arguments[k] = v
+			}
+		}
 	}
 
-	var arguments map[string]interface{}
-	e = json.Unmarshal(buffer.Bytes(), &arguments)
-	if nil != e {
-		return nil, errors.New("ummarshal config '" + file + "' failed, " + e.Error())
-	}
-
-	if s, ok := arguments["java"]; ok {
+	if s, ok := all_arguments["java"]; ok {
 		*java_path = fmt.Sprint(s)
 	} else {
-		arguments["java"] = *java_path
+		all_arguments["java"] = *java_path
 	}
 
-	return arguments, nil
+	all_arguments["root_dir"] = root
+	all_arguments["os"] = runtime.GOOS
+	all_arguments["arch"] = runtime.GOARCH
+	return all_arguments, nil
 }
