@@ -137,6 +137,13 @@ func New() (*Manager, error) {
 		return nil, e
 	}
 
+	services_disabled := stringsWithDefault(mgr.settings, "services_disabled", ",", nil)
+	if len(services_disabled) > 0 {
+		for _, s := range services_disabled {
+			mgr.Disable(strings.TrimSpace(s))
+		}
+	}
+
 	expvar.Publish("supervisors", manager_exporter)
 	manager_exporter.Var = mgr
 
