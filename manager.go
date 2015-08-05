@@ -138,7 +138,8 @@ func (self *Manager) Stats() interface{} {
 	}
 	return map[string]interface{}{"processes": res,
 		"version":  "1.0",
-		"settings": self.settings}
+		"settings": self.settings,
+		"skipped":  self.skipped}
 }
 
 func (self *Manager) beforeStart() error {
