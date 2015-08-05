@@ -310,7 +310,14 @@ func loadConfigs(root, execute string, files []string) (*Manager, error) {
 		s.setOutput(out)
 	}
 
-	return &Manager{settings_file: files[0], settings: arguments, supervisors: supervisors}, nil
+	file := filepath.Join(RootDir, "data", "conf", "daemon.properties")
+	if len(files) > 0 && (strings.Contains(files[len(files)-1], "/data/conf/") ||
+		strings.Contains(files[len(files)-1], "/data/etc/") ||
+		strings.Contains(files[len(files)-1], "\\data\\conf\\") ||
+		strings.Contains(files[len(files)-1], "\\data\\etc\\")) {
+		file = files[len(files)-1]
+	}
+	return &Manager{settings_file: file, settings: arguments, supervisors: supervisors}, nil
 }
 
 func loadConfig(file string, args map[string]interface{}, supervisors []supervisor) ([]supervisor, error) {
