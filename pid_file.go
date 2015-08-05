@@ -38,7 +38,7 @@ func CreatePidFile(pidFile, image string) error {
 		if err == nil {
 			if pr, e := ps.FindProcess(pid); nil != e || (nil != pr &&
 				strings.Contains(strings.ToLower(pr.Executable()), strings.ToLower(image))) {
-				return fmt.Errorf("pid file found, ensure "+image+" is not running or delete %s", pidFile)
+				return fmt.Errorf("pid file is already exists, ensure "+image+" is not running or delete %s.", pidFile)
 			}
 		}
 	}
