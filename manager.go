@@ -51,6 +51,14 @@ func (self *Manager) SetMode(mode string) {
 	self.mode = mode
 }
 
+func (self *Manager) Names() []string {
+	names := make([]string, len(self.supervisors))
+	for idx, s := range self.supervisors {
+		names[idx] = s.name()
+	}
+	return names
+}
+
 func (self *Manager) Mode() string {
 	return self.mode
 }
