@@ -105,7 +105,7 @@ func (self *Manager) Enable(name string) {
 		if nm == name {
 			continue
 		}
-		skipped = append(skipped, name)
+		skipped = append(skipped, nm)
 	}
 	self.skipped = skipped
 }
