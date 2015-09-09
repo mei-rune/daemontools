@@ -105,12 +105,14 @@ func New() (*Manager, error) {
 		filepath.Clean(abs(filepath.Join(RootDir, "data", "etc", Program+".properties"))),
 		filepath.Clean(abs(filepath.Join(RootDir, "data", "conf", Program+".properties"))),
 		filepath.Clean(abs(filepath.Join(RootDir, "data", "etc", "daemon.properties"))),
-		filepath.Clean(abs(filepath.Join(RootDir, "data", "conf", "daemon.properties")))}
+		filepath.Clean(abs(filepath.Join(RootDir, "data", "conf", "daemon.properties"))),
+		filepath.Clean(abs(filepath.Join("/etc", "hengwei", "daemon.properties"))),
+		filepath.Clean(abs(filepath.Join("/etc", "tpt", "daemon.properties")))}
 
 	var files []string
 	for _, file := range guess_files {
 		if FileExists(file) {
-			files = append(files)
+			files = append(files, file)
 		}
 	}
 
@@ -232,7 +234,7 @@ func loadConfigs(root, execute string, files []string) (*Manager, error) {
 			return nil, e
 		}
 	} else {
-		log.Println("[warn] the default config file is not found.")
+		log.Println("[warn] the daemon config file is not found.")
 	}
 
 	if nil == arguments {
