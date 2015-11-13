@@ -147,7 +147,7 @@ func New() (*Manager, error) {
 				case "1", "yes", "true":
 					mgr.Disable(name)
 				case "0", "no", "false":
-					mgr.Disable(name)
+					mgr.Enable(name)
 				default:
 					log.Println("'" + k + "=" + fmt.Sprint(s) + "' is invalid.")
 					os.Exit(1)
