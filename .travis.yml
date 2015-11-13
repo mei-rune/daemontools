@@ -3,5 +3,6 @@ go: 1.1
 install:
   - export PATH=$PATH:$HOME/gopath/bin
   - go get github.com/mitchellh/go-ps
+  - go get github.com/rakyll/statik
 script:
   - go test -v
