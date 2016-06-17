@@ -137,7 +137,7 @@ func New() (*Manager, error) {
 
 	if 0 == len(*java15_path) {
 		*java15_path = search_java15_home(RootDir)
-		log.Println("[warn] java is", *java15_path)
+		log.Println("[warn] java15 is", *java15_path)
 	}
 
 	mgr, e := loadConfigs(RootDir, Program, files)
@@ -516,8 +516,8 @@ func loadCommand(args []map[string]interface{}) (*command, error) {
 			return nil, e
 		}
 
-		if "java" == proc || "java.exe" == proc {
-			proc = stringWithArguments(args, "java", *java15_path)
+		if "java15" == proc || "java15.exe" == proc {
+			proc = stringWithArguments(args, "java15", *java15_path)
 		}
 	}
 
