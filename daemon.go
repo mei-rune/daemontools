@@ -25,6 +25,7 @@ var (
 	pre_start   = flag.String("pre_start", "pre_start.bat", "the name of pre start")
 	post_finish = flag.String("post_finish", "post_finish.bat", "the name of post finish")
 	java_path   = flag.String("java_path", "", "the path of java, should auto search if it is empty")
+	java15_path = flag.String("java15_path", "", "the path of java, should auto search if it is empty")
 	mode        = flag.String("mode", "", "the mode of running")
 
 	manager_exporter = &Exporter{}
@@ -134,6 +135,11 @@ func New() (*Manager, error) {
 		log.Println("[warn] java is", *java_path)
 	}
 
+	if 0 == len(*java15_path) {
+		*java15_path = search_java15_home(RootDir)
+		log.Println("[warn] java is", *java15_path)
+	}
+
 	mgr, e := loadConfigs(RootDir, Program, files)
 	if nil != e {
 		return nil, e
@@ -179,17 +185,25 @@ func New() (*Manager, error) {
 }
 
 func search_java_home(root string) string {
+	return search_java_home_with_version(root, "")
+}
+
+func search_java15_home(root string) string {
+	return search_java_home_with_version(root, "15")
+}
+
+func search_java_home_with_version(root, version string) string {
 	java_execute := "java.exe"
 	if "windows" != runtime.GOOS {
 		java_execute = "java"
 	}
 
-	jp := filepath.Join(root, "runtime_env/jdk/bin", java_execute)
+	jp := filepath.Join(root, "runtime_env/jdk"+version+"/bin", java_execute)
 	if FileExists(jp) {
 		return jp
 	}
 
-	jp = filepath.Join(root, "runtime_env/jre/bin", java_execute)
+	jp = filepath.Join(root, "runtime_env/jre"+version+"/bin", java_execute)
 	if FileExists(jp) {
 		return jp
 	}
@@ -199,7 +213,7 @@ func search_java_home(root string) string {
 		return ss[0]
 	}
 
-	jh := os.Getenv("JAVA_HOME")
+	jh := os.Getenv("JAVA" + version + "_HOME")
 	if "" != jh {
 		return filepath.Join(jh, "bin", java_execute)
 	}
@@ -487,7 +501,23 @@ func loadCommand(args []map[string]interface{}) (*command, error) {
 		}
 
 		if "java" == proc || "java.exe" == proc {
-			proc = stringWithArguments(args, "java", *java_path)
+			version := stringWithArguments(args, "java_version", "")
+			if version == "15" {
+				proc = stringWithArguments(args, "java", *java15_path)
+			} else {
+				proc = stringWithArguments(args, "java", *java_path)
+			}
+		}
+
+	case "java15", "java15.exe":
+		var e error
+		arguments, e = loadJavaArguments(arguments, args)
+		if nil != e {
+			return nil, e
+		}
+
+		if "java" == proc || "java.exe" == proc {
+			proc = stringWithArguments(args, "java", *java15_path)
 		}
 	}
 
@@ -593,6 +623,7 @@ func loadDefault(root, file string) map[string]interface{} {
 	}
 	return map[string]interface{}{"root_dir": root,
 		"file_dir": file_dir,
+		"java15":   *java15_path,
 		"java":     *java_path,
 		"os":       runtime.GOOS,
 		"arch":     runtime.GOARCH}
@@ -625,6 +656,12 @@ func loadProperties(root string, files []string) (map[string]interface{}, error)
 		*java_path = fmt.Sprint(s)
 	} else {
 		all_arguments["java"] = *java_path
+	}
+
+	if s, ok := all_arguments["java15"]; ok {
+		*java15_path = fmt.Sprint(s)
+	} else {
+		all_arguments["java15"] = *java15_path
 	}
 
 	all_arguments["root_dir"] = root
