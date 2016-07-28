@@ -567,7 +567,7 @@ func loadJavaArguments(arguments []string, args []map[string]interface{}) ([]str
 	if 0 != len(debug) {
 		suspend := boolWithArguments(args, "java_debug_suspend", false)
 		if suspend {
-			results = append(results, "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address="+debug)
+			results = append(results, "-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address="+debug)
 		} else {
 			results = append(results, "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address="+debug)
 		}
