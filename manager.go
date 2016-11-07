@@ -40,6 +40,7 @@ type Manager struct {
 	post_finish_path string
 	mode             string
 	skipped          []string
+	protected        []string
 	fs               http.Handler
 }
 
@@ -126,6 +127,33 @@ func (self *Manager) IsSipped(name string) bool {
 	return false
 }
 
+func (self *Manager) EnableProtect(name string) {
+	protected := make([]string, 0, len(self.protected))
+	for _, nm := range self.protected {
+		if nm == name {
+			continue
+		}
+		protected = append(protected, nm)
+	}
+	self.protected = protected
+}
+
+func (self *Manager) DisableProtect(name string) {
+	self.protected = append(self.protected, name)
+}
+
+func (self *Manager) IsProtected(name string) bool {
+	if 0 == len(self.protected) {
+		return false
+	}
+	for _, nm := range self.protected {
+		if nm == name {
+			return true
+		}
+	}
+	return false
+}
+
 func (self *Manager) Stats() interface{} {
 	res := make([]interface{}, 0, len(self.supervisors))
 	for _, s := range self.supervisors {
@@ -168,6 +196,10 @@ func (self *Manager) Start() error {
 	if e := self.beforeStart(); nil != e {
 		return e
 	}
+	return self.Restore()
+}
+
+func (self *Manager) Restore() error {
 	for _, s := range self.supervisors {
 		if self.IsSipped(s.name()) {
 			continue
@@ -178,6 +210,7 @@ func (self *Manager) Start() error {
 		s.start()
 	}
 
+	var failed []string
 	for _, s := range self.supervisors {
 		if self.IsSipped(s.name()) {
 			continue
@@ -187,16 +220,29 @@ func (self *Manager) Start() error {
 			continue
 		}
 		if e := s.untilStarted(); nil != e {
-			return fmt.Errorf("start '%v' failed, %v", s.name(), e)
+			failed = append(failed, fmt.Sprintf("start '%v' failed, %v", s.name(), e))
 		}
+	}
+	if len(failed) > 0 {
+		return errors.New(strings.Join(failed, "\r\n"))
 	}
 	return nil
 }
 
-func (self *Manager) Stop() {
+func (self *Manager) Pause() error {
+	return self.stopAll(false)
+}
+
+func (self *Manager) stopAll(all bool) error {
 	for _, s := range self.supervisors {
-		if self.IsSipped(s.name()) {
-			continue
+		//if self.IsSipped(s.name()) {
+		//	continue
+		//}
+
+		if !all {
+			if self.IsProtected(s.name()) {
+				continue
+			}
 		}
 
 		//if !s.isMode(self.mode) {
@@ -205,18 +251,32 @@ func (self *Manager) Stop() {
 		s.stop()
 	}
 
+	var failed []string
 	for _, s := range self.supervisors {
-		if self.IsSipped(s.name()) {
+		// if self.IsSipped(s.name()) {
+		// 	continue
+		// }
+
+		if self.IsProtected(s.name()) {
 			continue
 		}
-
 		// if !s.isMode(self.mode) {
 		// 	continue
 		// }
 
 		if err := s.untilStopped(); nil != err {
-			log.Println(fmt.Sprintf("stop '%v' failed, %v", s.name(), err))
+			failed = append(failed, fmt.Sprintf("start '%v' failed, %v", s.name(), err))
 		}
+	}
+	if len(failed) > 0 {
+		return errors.New(strings.Join(failed, "\r\n"))
+	}
+	return nil
+}
+
+func (self *Manager) Stop() {
+	if e := self.stopAll(true); nil != e {
+		log.Println(e)
 	}
 
 	if e := self.afterStop(); nil != e {
