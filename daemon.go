@@ -19,6 +19,7 @@ import (
 
 var (
 	RootDir     = "."
+	LogDir      = ""
 	Program     = "daemon"
 	is_print    = flag.Bool("print", false, "print search paths while config is not found")
 	config_file = flag.String("config", "", "the config file path")
@@ -292,20 +293,23 @@ func loadConfigs(root, execute string, files []string) (*Manager, error) {
 		}
 	}
 
-	logPath := filepath.Clean(abs(filepath.Join(root, "logs")))
-	logs := []string{stringWithDefault(arguments, "logPath", logPath),
-		filepath.Clean(abs(filepath.Join(root, "..", "logs"))),
-		logPath}
+	if LogDir == "" {
+		logPath := filepath.Clean(abs(filepath.Join(root, "logs")))
+		logs := []string{stringWithDefault(arguments, "logPath", logPath),
+			filepath.Clean(abs(filepath.Join(root, "..", "logs"))),
+			logPath}
 
-	for _, s := range logs {
-		if DirExists(s) {
-			logPath = s
-			break
+		for _, s := range logs {
+			if DirExists(s) {
+				logPath = s
+				break
+			}
 		}
+		LogDir = logPath
 	}
 
-	if !DirExists(logPath) {
-		os.Mkdir(logPath, 0660)
+	if !DirExists(LogDir) {
+		os.Mkdir(LogDir, 0660)
 	}
 
 	logArguments := mapWithDefault(arguments, "log", map[string]interface{}{})
@@ -319,7 +323,7 @@ func loadConfigs(root, execute string, files []string) (*Manager, error) {
 	}
 
 	for _, s := range supervisors {
-		out, e := NewRotateFile(filepath.Clean(abs(filepath.Join(logPath, s.name()+".log"))), maxBytes, maxNum)
+		out, e := NewRotateFile(filepath.Clean(abs(filepath.Join(LogDir, s.name()+".log"))), maxBytes, maxNum)
 		if nil != e {
 			return nil, errors.New("open log failed for '" + s.name() + "', " + e.Error())
 		}
@@ -327,7 +331,8 @@ func loadConfigs(root, execute string, files []string) (*Manager, error) {
 	}
 
 	file := filepath.Join(RootDir, "data", "conf", "daemon.properties")
-	if len(files) > 0 && (strings.Contains(files[len(files)-1], "/data/conf/") ||
+	if len(files) > 0 && (strings.HasPrefix(files[len(files)-1], "/var/") ||
+		strings.Contains(files[len(files)-1], "/data/conf/") ||
 		strings.Contains(files[len(files)-1], "/data/etc/") ||
 		strings.Contains(files[len(files)-1], "\\data\\conf\\") ||
 		strings.Contains(files[len(files)-1], "\\data\\etc\\")) {
