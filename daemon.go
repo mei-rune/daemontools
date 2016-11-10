@@ -626,10 +626,16 @@ func loadDefault(root, file string) map[string]interface{} {
 	if "" != file {
 		file_dir = filepath.Dir(file)
 	}
+
+	osExt := ".exe"
+	if runtime.GOOS != "windows" {
+		osExt = ""
+	}
 	return map[string]interface{}{"root_dir": root,
 		"file_dir": file_dir,
 		"java15":   *java15_path,
 		"java":     *java_path,
+		"os_ext":   osExt,
 		"os":       runtime.GOOS,
 		"arch":     runtime.GOARCH}
 }
