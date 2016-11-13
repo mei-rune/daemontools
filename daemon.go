@@ -627,20 +627,20 @@ func loadDefault(root, file string) map[string]interface{} {
 		file_dir = filepath.Dir(file)
 	}
 
-	osExt := ".exe"
-	if runtime.GOOS != "windows" {
-		osExt = ""
-	}
 	return map[string]interface{}{"root_dir": root,
 		"file_dir": file_dir,
 		"java15":   *java15_path,
 		"java":     *java_path,
-		"os_ext":   osExt,
 		"os":       runtime.GOOS,
 		"arch":     runtime.GOARCH}
 }
 
 func loadProperties(root string, files []string) (map[string]interface{}, error) {
+
+	osExt := ".exe"
+	if runtime.GOOS != "windows" {
+		osExt = ""
+	}
 	var all_arguments = make(map[string]interface{})
 	for _, file := range files {
 		t, e := template.ParseFiles(file)
@@ -649,6 +649,7 @@ func loadProperties(root string, files []string) (map[string]interface{}, error)
 		}
 		args := loadDefault(root, file)
 
+		args["os_ext"] = osExt
 		var buffer bytes.Buffer
 		e = t.Execute(&buffer, args)
 		if nil != e {
@@ -677,6 +678,7 @@ func loadProperties(root string, files []string) (map[string]interface{}, error)
 
 	all_arguments["root_dir"] = root
 	all_arguments["os"] = runtime.GOOS
+	all_arguments["os_ext"] = osExt
 	all_arguments["arch"] = runtime.GOARCH
 	return all_arguments, nil
 }

@@ -16,7 +16,7 @@ type rotateFile struct {
 
 func (w *rotateFile) Write(s []byte) (int, error) {
 	if w.currentBytes >= w.maxBytes {
-		if err := w.intRotate(); nil != err {
+		if err := w.initRotate(); nil != err {
 			return 0, fmt.Errorf("rotate file(%q): %s\n", w.filename, err)
 		}
 	}
@@ -31,7 +31,7 @@ func (w *rotateFile) Write(s []byte) (int, error) {
 
 func (w *rotateFile) WriteString(s string) (int, error) {
 	if w.currentBytes >= w.maxBytes {
-		if err := w.intRotate(); nil != err {
+		if err := w.initRotate(); nil != err {
 			return 0, fmt.Errorf("rotate file(%q): %s\n", w.filename, err)
 		}
 	}
@@ -55,7 +55,7 @@ func (w *rotateFile) Close() error {
 func NewRotateFile(fname string, maxBytes, maxNum int) (*rotateFile, error) {
 	w := &rotateFile{filename: fname, maxBytes: maxBytes, currentBytes: 0, maxNum: maxNum}
 
-	if err := w.intRotate(); nil != err {
+	if err := w.initRotate(); nil != err {
 		fmt.Fprintf(os.Stderr, "rotateFile(%q): %s\n", w.filename, err)
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func NewRotateFile(fname string, maxBytes, maxNum int) (*rotateFile, error) {
 	return w, nil
 }
 
-func (w *rotateFile) intRotate() error {
+func (w *rotateFile) initRotate() error {
 	if w.file != nil {
 		w.file.Close()
 	}
@@ -100,7 +100,7 @@ func (w *rotateFile) intRotate() error {
 		}
 	}
 
-	fd, err := os.OpenFile(w.filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0660)
+	fd, err := os.OpenFile(w.filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
 		return err
 	}
