@@ -92,7 +92,7 @@ func Init() error {
 
 	e := os.Chdir(RootDir)
 	if nil != e {
-		log.Println("change current dir to \"" + RootDir + "\"")
+		log.Println("change current dir to \""+RootDir+"\",", e)
 	}
 	return nil
 }

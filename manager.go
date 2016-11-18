@@ -128,6 +128,10 @@ func (self *Manager) IsSipped(name string) bool {
 }
 
 func (self *Manager) EnableProtect(name string) {
+	self.protected = append(self.protected, name)
+}
+
+func (self *Manager) DisableProtect(name string) {
 	protected := make([]string, 0, len(self.protected))
 	for _, nm := range self.protected {
 		if nm == name {
@@ -136,10 +140,6 @@ func (self *Manager) EnableProtect(name string) {
 		protected = append(protected, nm)
 	}
 	self.protected = protected
-}
-
-func (self *Manager) DisableProtect(name string) {
-	self.protected = append(self.protected, name)
 }
 
 func (self *Manager) IsProtected(name string) bool {
@@ -151,6 +151,7 @@ func (self *Manager) IsProtected(name string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -234,6 +235,7 @@ func (self *Manager) Pause() error {
 }
 
 func (self *Manager) stopAll(all bool) error {
+	var stopList []supervisor
 	for _, s := range self.supervisors {
 		//if self.IsSipped(s.name()) {
 		//	continue
@@ -249,17 +251,20 @@ func (self *Manager) stopAll(all bool) error {
 		//	continue
 		//}
 		s.stop()
+		stopList = append(stopList, s)
 	}
 
 	var failed []string
-	for _, s := range self.supervisors {
+	for _, s := range stopList {
 		// if self.IsSipped(s.name()) {
 		// 	continue
 		// }
-
-		if self.IsProtected(s.name()) {
-			continue
-		}
+		// if !all {
+		// 	fmt.Println("====", s.name(), "?")
+		// 	if self.IsProtected(s.name()) {
+		// 		continue
+		// 	}
+		// }
 		// if !s.isMode(self.mode) {
 		// 	continue
 		// }
