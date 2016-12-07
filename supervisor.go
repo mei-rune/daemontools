@@ -102,6 +102,7 @@ func (self *command) command(mode string) *exec.Cmd {
 }
 
 type supervisor interface {
+	fileName() string
 	name() string
 	start()
 	stop()
@@ -114,6 +115,7 @@ type supervisor interface {
 }
 
 type supervisorBase struct {
+	file        string
 	proc_name   string
 	retries     int
 	killTimeout time.Duration
@@ -122,6 +124,10 @@ type supervisorBase struct {
 	mode        string
 	out         io.Writer
 	srv_status  int32
+}
+
+func (self *supervisorBase) fileName() string {
+	return self.file
 }
 
 func (self *supervisorBase) isMode(mode string) bool {

@@ -204,6 +204,11 @@ func search_java_home_with_version(root, version string) string {
 		return jp
 	}
 
+	jp = filepath.Join(root, "runtime_env/java"+version+"/bin", java_execute)
+	if FileExists(jp) {
+		return jp
+	}
+
 	jp = filepath.Join(root, "runtime_env/jre"+version+"/bin", java_execute)
 	if FileExists(jp) {
 		return jp
@@ -446,6 +451,12 @@ func loadSupervisor(file string, arguments []map[string]interface{}, supervisors
 		}
 	}
 
+	for _, sp := range supervisors {
+		if sp.name() == name {
+			return nil, errors.New("'" + name + "' of '" + file + "' is already exists in the " + sp.fileName())
+		}
+	}
+
 	pidfile := stringWithArguments(arguments, "pidfile", "")
 	if 0 != len(pidfile) {
 		if nil != stop {
@@ -459,7 +470,9 @@ func loadSupervisor(file string, arguments []map[string]interface{}, supervisors
 
 		pidfile = filepath.Clean(abs(pidfile))
 		supervisors = append(supervisors, &supervisorWithPidfile{pidfile: pidfile,
-			supervisorBase: supervisorBase{proc_name: name,
+			supervisorBase: supervisorBase{
+				file:        file,
+				proc_name:   name,
 				mode:        stringWithArguments(arguments, "mode", ""),
 				retries:     retries,
 				killTimeout: killTimeout,
@@ -468,7 +481,9 @@ func loadSupervisor(file string, arguments []map[string]interface{}, supervisors
 
 	} else {
 		supervisors = append(supervisors, &supervisor_default{success_flag: success_flag,
-			supervisorBase: supervisorBase{proc_name: name,
+			supervisorBase: supervisorBase{
+				file:        file,
+				proc_name:   name,
 				mode:        stringWithArguments(arguments, "mode", ""),
 				retries:     retries,
 				killTimeout: killTimeout,
