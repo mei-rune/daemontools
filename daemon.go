@@ -25,8 +25,8 @@ var (
 	config_file = flag.String("config", "", "the config file path")
 	pre_start   = flag.String("pre_start", "pre_start.bat", "the name of pre start")
 	post_finish = flag.String("post_finish", "post_finish.bat", "the name of post finish")
-	java_path   = flag.String("java_path", "", "the path of java, should auto search if it is empty")
-	java15_path = flag.String("java15_path", "", "the path of java, should auto search if it is empty")
+	JavaPath    = flag.String("JavaPath", "", "the path of java, should auto search if it is empty")
+	Java15Path  = flag.String("Java15Path", "", "the path of java, should auto search if it is empty")
 	mode        = flag.String("mode", "", "the mode of running")
 
 	manager_exporter = &Exporter{}
@@ -131,14 +131,14 @@ func New() (*Manager, error) {
 		}
 	}
 
-	if 0 == len(*java_path) {
-		*java_path = search_java_home(RootDir)
-		log.Println("[warn] java is", *java_path)
+	if 0 == len(*JavaPath) {
+		*JavaPath = search_java_home(RootDir)
+		log.Println("[warn] java is", *JavaPath)
 	}
 
-	if 0 == len(*java15_path) {
-		*java15_path = search_java15_home(RootDir)
-		log.Println("[warn] java15 is", *java15_path)
+	if 0 == len(*Java15Path) {
+		*Java15Path = search_java15_home(RootDir)
+		log.Println("[warn] java15 is", *Java15Path)
 	}
 
 	mgr, e := loadConfigs(RootDir, Program, files)
@@ -523,9 +523,9 @@ func loadCommand(args []map[string]interface{}) (*command, error) {
 		if "java" == proc || "java.exe" == proc {
 			version := stringWithArguments(args, "java_version", "")
 			if version == "15" {
-				proc = stringWithArguments(args, "java", *java15_path)
+				proc = stringWithArguments(args, "java", *Java15Path)
 			} else {
-				proc = stringWithArguments(args, "java", *java_path)
+				proc = stringWithArguments(args, "java", *JavaPath)
 			}
 		}
 
@@ -537,7 +537,7 @@ func loadCommand(args []map[string]interface{}) (*command, error) {
 		}
 
 		if "java15" == proc || "java15.exe" == proc {
-			proc = stringWithArguments(args, "java15", *java15_path)
+			proc = stringWithArguments(args, "java15", *Java15Path)
 		}
 	}
 
@@ -644,8 +644,8 @@ func loadDefault(root, file string) map[string]interface{} {
 
 	return map[string]interface{}{"root_dir": root,
 		"file_dir": file_dir,
-		"java15":   *java15_path,
-		"java":     *java_path,
+		"java15":   *Java15Path,
+		"java":     *JavaPath,
 		"os":       runtime.GOOS,
 		"arch":     runtime.GOARCH}
 }
@@ -680,15 +680,15 @@ func loadProperties(root string, files []string) (map[string]interface{}, error)
 	}
 
 	if s, ok := all_arguments["java"]; ok {
-		*java_path = fmt.Sprint(s)
+		*JavaPath = fmt.Sprint(s)
 	} else {
-		all_arguments["java"] = *java_path
+		all_arguments["java"] = *JavaPath
 	}
 
 	if s, ok := all_arguments["java15"]; ok {
-		*java15_path = fmt.Sprint(s)
+		*Java15Path = fmt.Sprint(s)
 	} else {
-		all_arguments["java15"] = *java15_path
+		all_arguments["java15"] = *Java15Path
 	}
 
 	all_arguments["root_dir"] = root
