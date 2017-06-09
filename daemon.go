@@ -7,6 +7,7 @@ import (
 	"expvar"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -351,7 +352,42 @@ func loadConfigs(root, execute string, files []string, defaultArgs map[string]in
 }
 
 func loadConfig(file string, args map[string]interface{}, supervisors []supervisor) ([]supervisor, error) {
-	t, e := template.ParseFiles(file)
+	funcs := template.FuncMap{
+		"joinFilePath": filepath.Join,
+		"joinUrlPath": func(base string, paths ...string) string {
+			var buf bytes.Buffer
+			buf.WriteString(base)
+
+			lastSplash := strings.HasSuffix(base, "/")
+			for _, pa := range paths {
+				if 0 == len(pa) {
+					continue
+				}
+
+				if lastSplash {
+					if '/' == pa[0] {
+						buf.WriteString(pa[1:])
+					} else {
+						buf.WriteString(pa)
+					}
+				} else {
+					if '/' != pa[0] {
+						buf.WriteString("/")
+					}
+					buf.WriteString(pa)
+				}
+
+				lastSplash = strings.HasSuffix(pa, "/")
+			}
+			return buf.String()
+		},
+	}
+
+	bs, e := ioutil.ReadFile(file)
+	if nil != e {
+		return nil, errors.New("read file failed, " + e.Error())
+	}
+	t, e := template.New("default").Funcs(funcs).Parse(string(bs))
 	if nil != e {
 		return nil, errors.New("read file failed, " + e.Error())
 	}
