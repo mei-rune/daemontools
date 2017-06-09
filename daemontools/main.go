@@ -23,7 +23,7 @@ func main() {
 		return
 	}
 
-	mgr, e := daemontools.New()
+	mgr, e := daemontools.New(nil)
 	if nil != e {
 		log.Println(e)
 		return

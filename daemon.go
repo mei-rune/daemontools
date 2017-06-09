@@ -97,7 +97,7 @@ func Init() error {
 	return nil
 }
 
-func New() (*Manager, error) {
+func New(arguments map[string]interface{}) (*Manager, error) {
 	guess_files := []string{filepath.Clean(abs(filepath.Join(RootDir, Program+".properties"))),
 		filepath.Clean(abs(filepath.Join(RootDir, "etc", Program+".properties"))),
 		filepath.Clean(abs(filepath.Join(RootDir, "conf", Program+".properties"))),
@@ -141,7 +141,7 @@ func New() (*Manager, error) {
 		log.Println("[warn] java15 is", *Java15Path)
 	}
 
-	mgr, e := loadConfigs(RootDir, Program, files)
+	mgr, e := loadConfigs(RootDir, Program, files, arguments)
 	if nil != e {
 		return nil, e
 	}
@@ -244,7 +244,7 @@ func execute(pa string) error {
 	return cmd.Run()
 }
 
-func loadConfigs(root, execute string, files []string) (*Manager, error) {
+func loadConfigs(root, execute string, files []string, defaultArgs map[string]interface{}) (*Manager, error) {
 	var arguments map[string]interface{}
 	//"autostart_"
 	if len(files) > 0 {
@@ -265,6 +265,10 @@ func loadConfigs(root, execute string, files []string) (*Manager, error) {
 		arguments["execute"] = "daemontools"
 	} else {
 		arguments["execute"] = execute
+	}
+
+	for k, v := range defaultArgs {
+		arguments[k] = v
 	}
 
 	patterns := stringsWithDefault(arguments, "patterns", ";", nil)
