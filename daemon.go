@@ -352,42 +352,7 @@ func loadConfigs(root, execute string, files []string, defaultArgs map[string]in
 }
 
 func loadConfig(file string, args map[string]interface{}, supervisors []supervisor) ([]supervisor, error) {
-	funcs := template.FuncMap{
-		"joinFilePath": filepath.Join,
-		"joinUrlPath": func(base string, paths ...string) string {
-			var buf bytes.Buffer
-			buf.WriteString(base)
-
-			lastSplash := strings.HasSuffix(base, "/")
-			for _, pa := range paths {
-				if 0 == len(pa) {
-					continue
-				}
-
-				if lastSplash {
-					if '/' == pa[0] {
-						buf.WriteString(pa[1:])
-					} else {
-						buf.WriteString(pa)
-					}
-				} else {
-					if '/' != pa[0] {
-						buf.WriteString("/")
-					}
-					buf.WriteString(pa)
-				}
-
-				lastSplash = strings.HasSuffix(pa, "/")
-			}
-			return buf.String()
-		},
-	}
-
-	bs, e := ioutil.ReadFile(file)
-	if nil != e {
-		return nil, errors.New("read file failed, " + e.Error())
-	}
-	t, e := template.New("default").Funcs(funcs).Parse(string(bs))
+	t, e := loadTemplateFile(file)
 	if nil != e {
 		return nil, errors.New("read file failed, " + e.Error())
 	}
@@ -698,7 +663,7 @@ func loadProperties(root string, files []string) (map[string]interface{}, error)
 	}
 	var all_arguments = make(map[string]interface{})
 	for _, file := range files {
-		t, e := template.ParseFiles(file)
+		t, e := loadTemplateFile(file)
 		if nil != e {
 			return nil, errors.New("read config '" + file + "' failed, " + e.Error())
 		}
@@ -736,4 +701,43 @@ func loadProperties(root string, files []string) (map[string]interface{}, error)
 	all_arguments["os_ext"] = osExt
 	all_arguments["arch"] = runtime.GOARCH
 	return all_arguments, nil
+}
+
+var funcs = template.FuncMap{
+	"joinFilePath": filepath.Join,
+	"joinUrlPath": func(base string, paths ...string) string {
+		var buf bytes.Buffer
+		buf.WriteString(base)
+
+		lastSplash := strings.HasSuffix(base, "/")
+		for _, pa := range paths {
+			if 0 == len(pa) {
+				continue
+			}
+
+			if lastSplash {
+				if '/' == pa[0] {
+					buf.WriteString(pa[1:])
+				} else {
+					buf.WriteString(pa)
+				}
+			} else {
+				if '/' != pa[0] {
+					buf.WriteString("/")
+				}
+				buf.WriteString(pa)
+			}
+
+			lastSplash = strings.HasSuffix(pa, "/")
+		}
+		return buf.String()
+	},
+}
+
+func loadTemplateFile(file string) (*template.Template, error) {
+	bs, e := ioutil.ReadFile(file)
+	if nil != e {
+		return nil, errors.New("read file failed, " + e.Error())
+	}
+	return template.New("default").Funcs(funcs).Parse(string(bs))
 }
