@@ -658,9 +658,12 @@ func loadDefault(root, file string) map[string]interface{} {
 func loadProperties(root string, files []string) (map[string]interface{}, error) {
 
 	osExt := ".exe"
+	batExt := ".bat"
 	if runtime.GOOS != "windows" {
 		osExt = ""
+		batExt = ".sh"
 	}
+
 	var all_arguments = make(map[string]interface{})
 	for _, file := range files {
 		t, e := loadTemplateFile(file)
@@ -669,6 +672,7 @@ func loadProperties(root string, files []string) (map[string]interface{}, error)
 		}
 		args := loadDefault(root, file)
 
+		args["sh_ext"] = batExt
 		args["os_ext"] = osExt
 		var buffer bytes.Buffer
 		e = t.Execute(&buffer, args)
@@ -699,6 +703,7 @@ func loadProperties(root string, files []string) (map[string]interface{}, error)
 	all_arguments["root_dir"] = root
 	all_arguments["os"] = runtime.GOOS
 	all_arguments["os_ext"] = osExt
+	all_arguments["sh_ext"] = batExt
 	all_arguments["arch"] = runtime.GOARCH
 	return all_arguments, nil
 }
