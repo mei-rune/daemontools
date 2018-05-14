@@ -42,6 +42,17 @@ type Manager struct {
 	skipped          []string
 	protected        []string
 	fs               http.Handler
+	on               func(string, int32)
+}
+
+func (self *Manager) On(on func(string, int32)) {
+	self.on = on
+}
+
+func (self *Manager) onEvent(name string, status int32) {
+	if self.on != nil {
+		self.on(name, status)
+	}
 }
 
 func (self *Manager) SetFs(fs http.Handler) {

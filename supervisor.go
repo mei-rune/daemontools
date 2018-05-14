@@ -124,6 +124,13 @@ type supervisorBase struct {
 	mode        string
 	out         io.Writer
 	srv_status  int32
+	on          func(string, int32)
+}
+
+func (self *supervisor_default) onEvent(status int32) {
+	if self.on != nil {
+		self.on(self.name(), status)
+	}
 }
 
 func (self *supervisorBase) fileName() string {
@@ -184,7 +191,7 @@ func (self *supervisorBase) killBySignal(pid int) (bool, string) {
 		return false, "signal is empty"
 	}
 
-	var sig os.Signal = nil
+	var sig os.Signal
 	switch self.stop_cmd.arguments[0] {
 	case "kill":
 		sig = os.Kill

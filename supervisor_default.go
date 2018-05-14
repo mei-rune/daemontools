@@ -91,7 +91,7 @@ func (self *supervisor_default) untilWith(old_status, srv_status int32) error {
 		case old_status:
 			break
 		default:
-			return fmt.Errorf("status is invalid, old_status is %v, excepted is %v, actual is %v.",
+			return fmt.Errorf("status is invalid, old_status is %v, excepted is %v, actual is %v",
 				srvString(old_status), srvString(srv_status), srvString(s))
 		}
 		self.cond.Wait()
@@ -227,7 +227,7 @@ func (self *supervisor_default) loop() {
 		if e := recover(); nil != e {
 			var buffer bytes.Buffer
 			buffer.WriteString(fmt.Sprintf("[panic] crashed with error - %s\r\n", e))
-			for i := 1; ; i += 1 {
+			for i := 1; ; i++ {
 				_, file, line, ok := runtime.Caller(i)
 				if !ok {
 					break
@@ -241,7 +241,12 @@ func (self *supervisor_default) loop() {
 	}()
 
 	self.logString("[sys] ==================== srv  start ====================\r\n")
-	for i := 0; i < self.retries; i++ {
+
+	retries := self.retries
+	if retries <= 0 {
+		retries = 1
+	}
+	for i := 0; i < retries; i++ {
 		self.run(func() {
 			self.casStatus(SRV_STARTING, SRV_RUNNING)
 		})
@@ -261,22 +266,22 @@ func (self *supervisor_default) loop() {
 
 func (self *supervisor_default) run(cb func()) {
 	self.cond.L.Lock()
-	is_locked := true
+	isLocked := true
 	defer func() {
-
-		if !is_locked {
+		if !isLocked {
 			self.cond.L.Lock()
 		}
 		self.stdin = nil
 		self.pid = 0
 		self.cond.L.Unlock()
 
+		self.onEvent(PROC_STOPPNG)
 		atomic.StoreInt32(&self.proc_status, PROC_INIT)
 
 		if e := recover(); nil != e {
 			var buffer bytes.Buffer
 			buffer.WriteString(fmt.Sprintf("[panic] crashed with error - %s\r\n", e))
-			for i := 1; ; i += 1 {
+			for i := 1; ; i++ {
 				_, file, line, ok := runtime.Caller(i)
 				if !ok {
 					break
@@ -297,7 +302,7 @@ func (self *supervisor_default) run(cb func()) {
 	atomic.StoreInt32(&self.proc_status, PROC_STARTING)
 
 	cmd := self.start_cmd.command(self.mode)
-	if 0 == len(self.success_flag) {
+	if self.success_flag == "" {
 		if *is_print {
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
@@ -305,17 +310,14 @@ func (self *supervisor_default) run(cb func()) {
 			cmd.Stdout = self.out
 			cmd.Stderr = self.out
 		}
-		if nil != cb {
-			cb()
-		}
 	} else {
 		wrapped := wrap(self.out, []byte(self.success_flag), cb)
 		cmd.Stdout = wrapped
 		cmd.Stderr = wrapped
 	}
 
-	var in io.WriteCloser = nil
-	var e error = nil
+	var in io.WriteCloser
+	var e error
 	if nil != self.stop_cmd && "__console__" == self.stop_cmd.proc {
 		in, e = cmd.StdinPipe()
 		if nil != e {
@@ -331,16 +333,30 @@ func (self *supervisor_default) run(cb func()) {
 		self.logString(fmt.Sprintf("[sys] \t\t%v\r\n", s))
 	}
 
+	self.onEvent(PROC_STARTING)
 	if e = cmd.Start(); nil != e {
+
+		if self.success_flag == "" {
+			if nil != cb {
+				cb()
+			}
+		}
+
 		self.logString(fmt.Sprintf("[sys] start process failed - %v\r\n", e))
 		return
 	}
 	atomic.StoreInt32(&self.proc_status, PROC_RUNNING)
-
 	self.stdin = in
 	self.pid = cmd.Process.Pid
 	self.cond.L.Unlock()
-	is_locked = false
+	isLocked = false
+	if self.success_flag == "" {
+		if nil != cb {
+			cb()
+		}
+	}
+
+	self.onEvent(PROC_RUNNING)
 
 	// cmd.Wait() may blocked for ever in the win32.
 	ch := make(chan error, 3)
@@ -350,14 +366,14 @@ func (self *supervisor_default) run(cb func()) {
 
 	tricker := time.NewTicker(1 * time.Minute)
 	defer tricker.Stop()
-	is_stopped := false
-	for !is_stopped {
+	isStopped := false
+	for !isStopped {
 		select {
 		case e = <-ch:
-			is_stopped = true
+			isStopped = true
 		case <-tricker.C:
 			if !IsInProcessList(self.pid, "") {
-				is_stopped = true
+				isStopped = true
 				self.closeStdin()
 				self.logString("[sys] process pid('" + strconv.FormatInt(int64(self.pid), 10) + "') is not found.\r\n")
 			}

@@ -282,6 +282,7 @@ func loadConfigs(root, execute string, files []string, defaultArgs map[string]in
 		filepath.Clean(abs(filepath.Join(root, "*/autostart-*.conf"))),
 		filepath.Clean(abs(filepath.Join(root, "*/autostart_*.conf"))))
 
+	mgr := &Manager{}
 	supervisors := make([]supervisor, 0, 10)
 	for _, pattern := range patterns {
 		matches, e := filepath.Glob(pattern)
@@ -294,12 +295,11 @@ func loadConfigs(root, execute string, files []string, defaultArgs map[string]in
 		}
 
 		for _, nm := range matches {
-			supervisors, e = loadConfig(nm, arguments, supervisors)
+			supervisors, e = loadConfig(nm, arguments, mgr.onEvent, supervisors)
 			if nil != e {
 				return nil, errors.New("load '" + nm + "' failed, " + e.Error())
-			} else {
-				log.Println("load '" + nm + "' is ok.")
 			}
+			log.Println("load '" + nm + "' is ok.")
 		}
 	}
 
@@ -343,15 +343,17 @@ func loadConfigs(root, execute string, files []string, defaultArgs map[string]in
 	file := filepath.Join(RootDir, "data", "conf", "daemon.properties")
 	if len(files) > 0 && (strings.HasPrefix(files[len(files)-1], "/var/") ||
 		strings.Contains(files[len(files)-1], "/data/conf/") ||
-		strings.Contains(files[len(files)-1], "/data/etc/") ||
-		strings.Contains(files[len(files)-1], "\\data\\conf\\") ||
-		strings.Contains(files[len(files)-1], "\\data\\etc\\")) {
+		strings.Contains(files[len(files)-1], "\\data\\conf\\")) {
 		file = files[len(files)-1]
 	}
-	return &Manager{settings_file: file, settings: arguments, supervisors: supervisors}, nil
+
+	mgr.settings = arguments
+	mgr.settings_file = file
+	mgr.supervisors = supervisors
+	return mgr, nil
 }
 
-func loadConfig(file string, args map[string]interface{}, supervisors []supervisor) ([]supervisor, error) {
+func loadConfig(file string, args map[string]interface{}, on func(string, int32), supervisors []supervisor) ([]supervisor, error) {
 	t, e := loadTemplateFile(file)
 	if nil != e {
 		return nil, errors.New("read file failed, " + e.Error())
@@ -376,7 +378,7 @@ func loadConfig(file string, args map[string]interface{}, supervisors []supervis
 	switch value := v.(type) {
 	case map[string]interface{}:
 		arguments := []map[string]interface{}{value, args}
-		return loadSupervisor(file, arguments, supervisors)
+		return loadSupervisor(file, arguments, on, supervisors)
 	case []interface{}:
 		for idx, o := range value {
 			attributes, ok := o.(map[string]interface{})
@@ -385,7 +387,7 @@ func loadConfig(file string, args map[string]interface{}, supervisors []supervis
 			}
 
 			arguments := []map[string]interface{}{attributes, args}
-			supervisors, e = loadSupervisor(file, arguments, supervisors)
+			supervisors, e = loadSupervisor(file, arguments, on, supervisors)
 			if nil != e {
 				return nil, e
 			}
@@ -395,7 +397,7 @@ func loadConfig(file string, args map[string]interface{}, supervisors []supervis
 	return nil, fmt.Errorf("it is not a map or array - %T", v)
 }
 
-func loadSupervisor(file string, arguments []map[string]interface{}, supervisors []supervisor) ([]supervisor, error) {
+func loadSupervisor(file string, arguments []map[string]interface{}, on func(string, int32), supervisors []supervisor) ([]supervisor, error) {
 	// type supervisor struct {
 	//   name              string
 	//   success_flag      string
@@ -481,6 +483,7 @@ func loadSupervisor(file string, arguments []map[string]interface{}, supervisors
 				mode:        stringWithArguments(arguments, "mode", ""),
 				retries:     retries,
 				killTimeout: killTimeout,
+				on:          on,
 				start_cmd:   start,
 				stop_cmd:    stop}})
 
@@ -492,6 +495,7 @@ func loadSupervisor(file string, arguments []map[string]interface{}, supervisors
 				mode:        stringWithArguments(arguments, "mode", ""),
 				retries:     retries,
 				killTimeout: killTimeout,
+				on:          on,
 				start_cmd:   start,
 				stop_cmd:    stop}})
 	}
