@@ -3,8 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"net/textproto"
 	"os"
+	"time"
 )
 
 func main() {
@@ -14,8 +16,11 @@ func main() {
 		ln, e := reader.ReadLine()
 		fmt.Println("read:", ln)
 		if nil != e {
-			fmt.Println("error:", e)
-			return
+			if err != io.EOF {
+				fmt.Println("error:", e)
+				return
+			}
+			time.Sleep(10 * time.Microsecond)
 		}
 		if os.Args[1] == ln {
 			break
