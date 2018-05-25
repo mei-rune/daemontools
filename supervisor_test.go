@@ -339,6 +339,7 @@ func TestStopByConsole(t *testing.T) {
 	e := s.untilStarted()
 	if nil != e {
 		t.Error(e)
+		t.Log(buffer.String())
 		return
 	}
 
@@ -386,6 +387,7 @@ func TestStopByConsoleWithErrorExec(t *testing.T) {
 	e := s.untilStarted()
 	if nil != e {
 		t.Error(e)
+		t.Error(buffer.String())
 		return
 	}
 	s.stop()
@@ -401,6 +403,7 @@ func TestStopByConsoleWithErrorExec(t *testing.T) {
 	if !strings.Contains(ss, "EOF") {
 		t.Error(ss)
 	}
+	t.Log(ss)
 }
 
 func TestStopByKill(t *testing.T) {
@@ -413,7 +416,7 @@ func TestStopByKill(t *testing.T) {
 			killTimeout: 3 * time.Second,
 			out:         &buffer,
 			start_cmd: &command{proc: "go",
-				arguments: []string{"run", filepath.Join(wd, "mock", "echo.go"), "TestStopByKill"}},
+				arguments: []string{"run", filepath.Join(wd, "mock", "run_forever.go"), "TestStopByKill"}},
 			stop_cmd: &command{proc: "__kill__"}}}
 
 	s.start()
@@ -426,6 +429,7 @@ func TestStopByKill(t *testing.T) {
 	e := s.untilStarted()
 	if nil != e {
 		t.Error(e)
+		t.Error(buffer.String())
 		return
 	}
 
@@ -446,4 +450,5 @@ func TestStopByKill(t *testing.T) {
 	if strings.Contains(ss, "timed out after ") {
 		t.Error(ss)
 	}
+	t.Log(ss)
 }

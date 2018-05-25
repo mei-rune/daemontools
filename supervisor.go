@@ -156,13 +156,12 @@ func (self *supervisorBase) name() string {
 
 func (self *supervisorBase) stats() map[string]interface{} {
 	status := atomic.LoadInt32(&self.srv_status)
-	is_started := status != SRV_INIT || status != SRV_STOPPING
 	return map[string]interface{}{
 		"name":         self.proc_name,
 		"retries":      self.retries,
 		"kill_timeout": self.killTimeout,
 		"owned":        true,
-		"is_started":   is_started,
+		"is_started":   (status != SRV_INIT) && (status != SRV_STOPPING),
 		"srv_status":   srvString(status)}
 }
 
