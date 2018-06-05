@@ -622,6 +622,7 @@ func loadJavaArguments(arguments []string, args []map[string]interface{}) ([]str
 			results = append(results, "-Dcom.sun.management.jmxremote.authenticate=false")
 		}
 		results = append(results, "-Dcom.sun.management.jmxremote.ssl=false")
+		results = append(results, "-Dcom.sun.management.jmxremote.local.only=false")
 	}
 
 	options := stringsWithArguments(args, "java_options", ",", nil, false)
