@@ -2,7 +2,6 @@ package daemontools
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"expvar"
 	"flag"
@@ -368,7 +367,7 @@ func loadConfig(file string, args map[string]interface{}, on func(string, int32)
 	}
 
 	var v interface{}
-	e = json.Unmarshal(buffer.Bytes(), &v)
+	e = Unmarshal(buffer.Bytes(), &v)
 	//var attributes map[string]interface{}
 	//e = json.Unmarshal(buffer.Bytes(), &attributes)
 	if nil != e {

@@ -4,5 +4,6 @@ install:
   - export PATH=$PATH:$HOME/gopath/bin
   - go get github.com/mitchellh/go-ps
   - go get github.com/rakyll/statik
+  - go get github.com/hjson/hjson-go
 script:
   - go test -v
