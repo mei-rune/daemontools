@@ -75,10 +75,11 @@ func (self *Manager) Mode() string {
 	return self.mode
 }
 
-func (self *Manager) retry(name string) error {
+func (self *Manager) restart(name string) error {
 	for _, sp := range self.supervisors {
 		if sp.name() == name {
 			sp.stop()
+			sp.start()
 			return nil
 		}
 	}
@@ -344,7 +345,7 @@ func (self *Manager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if 2 == len(ss) {
 			switch strings.ToLower(ss[1]) {
 			case "restart":
-				if e := self.retry(ss[0]); nil != e {
+				if e := self.restart(ss[0]); nil != e {
 					w.WriteHeader(http.StatusInternalServerError)
 					io.WriteString(w, e.Error())
 				} else {
