@@ -190,7 +190,7 @@ func (self *supervisor_default) killByConsole(pid int) (bool, string) {
 		self.cond.L.Lock()
 		defer self.cond.L.Unlock()
 		if nil == self.stdin {
-			return errors.New("stdin is not redirect.")
+			return errors.New("stdin is not redirect")
 		}
 
 		defer func() {
