@@ -76,6 +76,7 @@ func (self *Manager) Mode() string {
 }
 
 func (self *Manager) restart(name string) error {
+	log.Println("[system] restart '" + name + "'")
 	for _, sp := range self.supervisors {
 		if sp.name() == name {
 			sp.stop()
@@ -320,6 +321,7 @@ end:
 }
 
 func (self *Manager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.Method, r.URL.Path)
 	switch r.Method {
 	case "GET":
 		if "/status" == r.URL.Path {

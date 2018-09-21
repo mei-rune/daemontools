@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"runtime"
 	"strconv"
@@ -108,7 +109,13 @@ func (self *supervisor_default) start() {
 	self.init()
 
 	if !self.casStatus(SRV_INIT, SRV_STARTING) {
-		return
+		if err := self.untilStopped(); err != nil {
+			log.Println("[system]", err)
+			return
+		}
+		if !self.casStatus(SRV_INIT, SRV_STARTING) {
+			return
+		}
 	}
 
 	go self.loop()
