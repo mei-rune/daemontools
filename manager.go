@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/rakyll/statik/fs"
+	"github.com/runner-mei/cron"
 	_ "github.com/runner-mei/daemontools/statik"
 )
 
@@ -33,6 +34,7 @@ var (
 )
 
 type Manager struct {
+	cr               *cron.Cron
 	settings_file    string
 	settings         map[string]interface{}
 	supervisors      []supervisor

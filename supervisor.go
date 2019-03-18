@@ -8,6 +8,8 @@ import (
 	"os/exec"
 	"sync/atomic"
 	"time"
+
+	"github.com/runner-mei/cron"
 )
 
 const (
@@ -110,24 +112,31 @@ type supervisor interface {
 	untilStarted() error
 	untilStopped() error
 
+	setManager(mgr *Manager)
 	setOutput(out io.Writer)
 	stats() map[string]interface{}
 }
 
 type supervisorBase struct {
-	file        string
-	proc_name   string
-	retries     int
-	killTimeout time.Duration
-	start_cmd   *command
-	stop_cmd    *command
-	mode        string
-	out         io.Writer
-	srv_status  int32
-	on          func(string, int32)
+	cr           *cron.Cron
+	file         string
+	proc_name    string
+	retries      int
+	killTimeout  time.Duration
+	start_cmd    *command
+	stop_cmd     *command
+	mode         string
+	out          io.Writer
+	srv_status   int32
+	on           func(string, int32)
+	killSchedule string
 }
 
-func (self *supervisor_default) onEvent(status int32) {
+func (self *supervisorBase) setManager(mgr *Manager) {
+	self.cr = mgr.cr
+}
+
+func (self *supervisorBase) onEvent(status int32) {
 	if self.on != nil {
 		self.on(self.name(), status)
 	}

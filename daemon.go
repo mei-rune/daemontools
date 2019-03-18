@@ -15,6 +15,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/runner-mei/cron"
 )
 
 var (
@@ -281,7 +283,9 @@ func loadConfigs(root, execute string, files []string, defaultArgs map[string]in
 		filepath.Clean(abs(filepath.Join(root, "*/autostart-*.conf"))),
 		filepath.Clean(abs(filepath.Join(root, "*/autostart_*.conf"))))
 
-	mgr := &Manager{}
+	mgr := &Manager{
+		cr: cron.New(),
+	}
 	supervisors := make([]supervisor, 0, 10)
 	for _, pattern := range patterns {
 		matches, e := filepath.Glob(pattern)
@@ -349,6 +353,10 @@ func loadConfigs(root, execute string, files []string, defaultArgs map[string]in
 	mgr.settings = arguments
 	mgr.settings_file = file
 	mgr.supervisors = supervisors
+	for idx := range mgr.supervisors {
+		mgr.supervisors[idx].setManager(mgr)
+	}
+	mgr.cr.Start()
 	return mgr, nil
 }
 
@@ -449,8 +457,8 @@ func loadSupervisor(file string, arguments []map[string]interface{}, on func(str
 		}
 	}
 
-	success_flag := stringWithArguments(arguments, "success_flag", "")
-	if 0 == len(success_flag) {
+	successFlag := stringWithArguments(arguments, "success_flag", "")
+	if 0 == len(successFlag) {
 		retries1 := intWithDefault(arguments[0], "retries", 0)
 		if retries1 > 0 {
 			log.Println("[warn] retries will ignore while success_flag is missing in '" + name + "' at '" + file + "'.")
@@ -463,6 +471,7 @@ func loadSupervisor(file string, arguments []map[string]interface{}, on func(str
 		}
 	}
 
+	killSchedule := stringWithArguments(arguments, "kill_schedule", "")
 	pidfile := stringWithArguments(arguments, "pidfile", "")
 	if 0 != len(pidfile) {
 		if nil != stop {
@@ -477,26 +486,28 @@ func loadSupervisor(file string, arguments []map[string]interface{}, on func(str
 		pidfile = filepath.Clean(abs(pidfile))
 		supervisors = append(supervisors, &supervisorWithPidfile{pidfile: pidfile,
 			supervisorBase: supervisorBase{
-				file:        file,
-				proc_name:   name,
-				mode:        stringWithArguments(arguments, "mode", ""),
-				retries:     retries,
-				killTimeout: killTimeout,
-				on:          on,
-				start_cmd:   start,
-				stop_cmd:    stop}})
+				file:         file,
+				proc_name:    name,
+				killSchedule: killSchedule,
+				mode:         stringWithArguments(arguments, "mode", ""),
+				retries:      retries,
+				killTimeout:  killTimeout,
+				on:           on,
+				start_cmd:    start,
+				stop_cmd:     stop}})
 
 	} else {
-		supervisors = append(supervisors, &supervisor_default{success_flag: success_flag,
+		supervisors = append(supervisors, &supervisor_default{success_flag: successFlag,
 			supervisorBase: supervisorBase{
-				file:        file,
-				proc_name:   name,
-				mode:        stringWithArguments(arguments, "mode", ""),
-				retries:     retries,
-				killTimeout: killTimeout,
-				on:          on,
-				start_cmd:   start,
-				stop_cmd:    stop}})
+				file:         file,
+				proc_name:    name,
+				killSchedule: killSchedule,
+				mode:         stringWithArguments(arguments, "mode", ""),
+				retries:      retries,
+				killTimeout:  killTimeout,
+				on:           on,
+				start_cmd:    start,
+				stop_cmd:     stop}})
 	}
 	return supervisors, nil
 }

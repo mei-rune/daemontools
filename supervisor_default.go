@@ -247,6 +247,16 @@ func (self *supervisor_default) loop() {
 		self.logString("[sys] ====================  srv  end  ====================\r\n")
 	}()
 
+	var jobID = self.name() + "-" + time.Now().Format(time.RFC3339Nano)
+	if self.killSchedule != "" {
+		if err := self.cr.AddFunc(jobID, self.killSchedule, self.interrupt); err != nil {
+			self.logString("[sys] " + err.Error() + "\r\n")
+		} else {
+			defer self.cr.Unschedule(jobID)
+			self.logString("[sys] " + jobID + "\r\n")
+		}
+	}
+
 	self.logString("[sys] ==================== srv  start ====================\r\n")
 
 	retries := self.retries
