@@ -471,7 +471,7 @@ func loadSupervisor(file string, arguments []map[string]interface{}, on func(str
 		}
 	}
 
-	killSchedule := stringWithArguments(arguments, "kill_schedule", "")
+	restartSchedule := stringWithArguments(arguments, "restart_schedule", "")
 	pidfile := stringWithArguments(arguments, "pidfile", "")
 	if 0 != len(pidfile) {
 		if nil != stop {
@@ -486,28 +486,28 @@ func loadSupervisor(file string, arguments []map[string]interface{}, on func(str
 		pidfile = filepath.Clean(abs(pidfile))
 		supervisors = append(supervisors, &supervisorWithPidfile{pidfile: pidfile,
 			supervisorBase: supervisorBase{
-				file:         file,
-				proc_name:    name,
-				killSchedule: killSchedule,
-				mode:         stringWithArguments(arguments, "mode", ""),
-				retries:      retries,
-				killTimeout:  killTimeout,
-				on:           on,
-				start_cmd:    start,
-				stop_cmd:     stop}})
+				file:            file,
+				proc_name:       name,
+				restartSchedule: restartSchedule,
+				mode:            stringWithArguments(arguments, "mode", ""),
+				retries:         retries,
+				killTimeout:     killTimeout,
+				on:              on,
+				start_cmd:       start,
+				stop_cmd:        stop}})
 
 	} else {
 		supervisors = append(supervisors, &supervisor_default{success_flag: successFlag,
 			supervisorBase: supervisorBase{
-				file:         file,
-				proc_name:    name,
-				killSchedule: killSchedule,
-				mode:         stringWithArguments(arguments, "mode", ""),
-				retries:      retries,
-				killTimeout:  killTimeout,
-				on:           on,
-				start_cmd:    start,
-				stop_cmd:     stop}})
+				file:            file,
+				proc_name:       name,
+				restartSchedule: restartSchedule,
+				mode:            stringWithArguments(arguments, "mode", ""),
+				retries:         retries,
+				killTimeout:     killTimeout,
+				on:              on,
+				start_cmd:       start,
+				stop_cmd:        stop}})
 	}
 	return supervisors, nil
 }

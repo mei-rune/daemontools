@@ -118,18 +118,18 @@ type supervisor interface {
 }
 
 type supervisorBase struct {
-	cr           *cron.Cron
-	file         string
-	proc_name    string
-	retries      int
-	killTimeout  time.Duration
-	start_cmd    *command
-	stop_cmd     *command
-	mode         string
-	out          io.Writer
-	srv_status   int32
-	on           func(string, int32)
-	killSchedule string
+	cr              *cron.Cron
+	file            string
+	proc_name       string
+	retries         int
+	killTimeout     time.Duration
+	start_cmd       *command
+	stop_cmd        *command
+	mode            string
+	out             io.Writer
+	srv_status      int32
+	on              func(string, int32)
+	restartSchedule string
 }
 
 func (self *supervisorBase) setManager(mgr *Manager) {

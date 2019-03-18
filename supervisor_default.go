@@ -248,8 +248,8 @@ func (self *supervisor_default) loop() {
 	}()
 
 	var jobID = self.name() + "-" + time.Now().Format(time.RFC3339Nano)
-	if self.killSchedule != "" {
-		if err := self.cr.AddFunc(jobID, self.killSchedule, self.interrupt); err != nil {
+	if self.restartSchedule != "" {
+		if err := self.cr.AddFunc(jobID, self.restartSchedule, self.interrupt); err != nil {
 			self.logString("[sys] " + err.Error() + "\r\n")
 		} else {
 			defer self.cr.Unschedule(jobID)
