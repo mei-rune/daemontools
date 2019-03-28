@@ -5,5 +5,6 @@ install:
   - go get github.com/mitchellh/go-ps
   - go get github.com/rakyll/statik
   - go get github.com/hjson/hjson-go
+  - go get github.com/runner-mei/cron
 script:
   - go test -v
