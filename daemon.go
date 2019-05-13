@@ -724,6 +724,7 @@ func loadProperties(root string, files []string) (map[string]interface{}, error)
 }
 
 var funcs = template.FuncMap{
+	"fileExists":   FileExists,
 	"joinFilePath": filepath.Join,
 	"joinUrlPath": func(base string, paths ...string) string {
 		var buf bytes.Buffer
