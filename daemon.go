@@ -624,11 +624,18 @@ func loadJavaArguments(arguments []string, args []map[string]interface{}) ([]str
 
 		jmx_password := stringWithArguments(args, "jmx_password", "")
 		jmx_access := stringWithArguments(args, "jmx_access", "")
-		if "" != jmx_access && "" != jmx_password {
+		if jmx_access != "" {
 			results = append(results, "-Dcom.sun.management.jmxremote.authenticate=true")
 			results = append(results, "-Dcom.sun.management.jmxremote.access.file="+jmx_access)
+		}
+		if jmx_password != "" {
+			if jmx_access == "" {
+				results = append(results, "-Dcom.sun.management.jmxremote.authenticate=true")
+			}
 			results = append(results, "-Dcom.sun.management.jmxremote.password.file="+jmx_password)
-		} else {
+		}
+
+		if jmx_access == "" && jmx_password == "" {
 			results = append(results, "-Dcom.sun.management.jmxremote.authenticate=false")
 		}
 		results = append(results, "-Dcom.sun.management.jmxremote.ssl=false")
