@@ -90,6 +90,10 @@ func (self *Manager) restart(name string) error {
 	return errors.New(name + " isn't found.")
 }
 
+func (self *Manager) StartByName(name string) error {
+	return self.start(name)
+}
+
 func (self *Manager) start(name string) error {
 	self.Enable(name)
 	log.Println("[system] enable '" + name + "'")
@@ -100,6 +104,10 @@ func (self *Manager) start(name string) error {
 		}
 	}
 	return errors.New(name + " isn't found.")
+}
+
+func (self *Manager) StopByName(name string) error {
+	return self.stop(name)
 }
 
 func (self *Manager) stop(name string) error {
