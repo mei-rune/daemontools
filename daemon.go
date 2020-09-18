@@ -767,5 +767,11 @@ func loadTemplateFile(file string) (*template.Template, error) {
 	if nil != e {
 		return nil, errors.New("read file failed, " + e.Error())
 	}
+
+	// remove BOM
+	if bytes.HasPrefix(bs, []byte{0xEF, 0xBB, 0xBF}) {
+		bs = bs[3:]
+	}
+
 	return template.New("default").Funcs(funcs).Parse(string(bs))
 }

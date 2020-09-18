@@ -17,6 +17,10 @@ func fixJSON(data []byte) []byte {
 }
 
 func HjsonToJSON(bs []byte) ([]byte, error) {
+	// if bytes.HasPrefix(bs, []byte{0xEF, 0xBB, 0xBF}) {
+	// 	bs = bs[3:]
+	// }
+
 	var value interface{}
 	if err := hjson.Unmarshal(bs, &value); err != nil {
 		return nil, err
