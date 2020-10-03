@@ -465,6 +465,8 @@ func loadSupervisor(file string, arguments []map[string]interface{}, on func(str
 		}
 	}
 
+	cleansBefore := stringsWithArguments(arguments, "cleans_on_before", ",", nil, true)
+
 	for _, sp := range supervisors {
 		if sp.name() == name {
 			return nil, errors.New("'" + name + "' of '" + file + "' is already exists in the " + sp.fileName())
@@ -489,6 +491,7 @@ func loadSupervisor(file string, arguments []map[string]interface{}, on func(str
 				file:            file,
 				proc_name:       name,
 				restartSchedule: restartSchedule,
+				cleansBefore:    cleansBefore,
 				mode:            stringWithArguments(arguments, "mode", ""),
 				retries:         retries,
 				killTimeout:     killTimeout,
@@ -502,6 +505,7 @@ func loadSupervisor(file string, arguments []map[string]interface{}, on func(str
 				file:            file,
 				proc_name:       name,
 				restartSchedule: restartSchedule,
+				cleansBefore:    cleansBefore,
 				mode:            stringWithArguments(arguments, "mode", ""),
 				retries:         retries,
 				killTimeout:     killTimeout,

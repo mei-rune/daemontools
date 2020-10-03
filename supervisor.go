@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -130,6 +132,30 @@ type supervisorBase struct {
 	srv_status      int32
 	on              func(string, int32)
 	restartSchedule string
+
+	cleansBefore []string
+}
+
+func (self *supervisorBase) cleanBefore() {
+	for _, cleanPath := range self.cleansBefore {
+		if strings.Contains(cleanPath, "*") {
+			files, err := filepath.Glob(cleanPath)
+			if err != nil {
+				self.logString("删除 '" + cleanPath + "' 失败: " + err.Error())
+			}
+			for _, name := range files {
+				err := os.RemoveAll(name)
+				if err != nil {
+					self.logString("删除 '" + name + "' 失败: " + err.Error())
+				}
+			}
+			return
+		}
+		err := os.RemoveAll(cleanPath)
+		if err != nil {
+			self.logString("删除 '" + cleanPath + "' 失败: " + err.Error())
+		}
+	}
 }
 
 func (self *supervisorBase) setManager(mgr *Manager) {
