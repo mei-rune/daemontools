@@ -465,13 +465,13 @@ func loadSupervisor(file string, arguments []map[string]interface{}, on func(str
 		}
 	}
 
-	cleansBefore := stringsWithArguments(arguments, "cleans_on_before", ",", nil, true)
-
 	for _, sp := range supervisors {
 		if sp.name() == name {
 			return nil, errors.New("'" + name + "' of '" + file + "' is already exists in the " + sp.fileName())
 		}
 	}
+
+	cleansBefore := stringsWithArguments(arguments, "cleans_on_before", ",", nil, true)
 
 	restartSchedule := stringWithArguments(arguments, "restart_schedule", "")
 	pidfile := stringWithArguments(arguments, "pidfile", "")
