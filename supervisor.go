@@ -61,6 +61,10 @@ func srvString(status int32) string {
 	return fmt.Sprintf("%d", status)
 }
 
+func ToProcString(status int32) string {
+	return procString(status) 
+}
+
 func procString(status int32) string {
 	switch status {
 	case PROC_INIT:
