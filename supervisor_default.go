@@ -263,6 +263,9 @@ func (self *supervisor_default) loop() {
 	if retries <= 0 {
 		retries = 1
 	}
+	if retries > 10 {
+		retries = 10
+	}
 	for i := 0; i < retries; i++ {
 		self.run(func() {
 			self.casStatus(SRV_STARTING, SRV_RUNNING)
@@ -292,7 +295,12 @@ func (self *supervisor_default) run(cb func()) {
 		self.pid = 0
 		self.cond.L.Unlock()
 
-		self.onEvent(PROC_STOPPNG)
+
+		if st := atomic.LoadInt32(&self.srv_status); SRV_RUNNING != st && SRV_STARTING != st {
+			self.onEvent(PROC_FAIL)
+		} else {
+			self.onEvent(PROC_STOPPNG)
+		}
 		atomic.StoreInt32(&self.proc_status, PROC_INIT)
 
 		if e := recover(); nil != e {

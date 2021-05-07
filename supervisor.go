@@ -24,6 +24,7 @@ const (
 	PROC_STARTING = 1
 	PROC_RUNNING  = 2
 	PROC_STOPPNG  = 3
+	PROC_FAIL     = 4
 )
 
 func statusString(srv_status, proc_status int32) string {
@@ -41,6 +42,8 @@ func statusString(srv_status, proc_status int32) string {
 		case PROC_RUNNING:
 			return "running"
 		case PROC_STOPPNG:
+			return "crashing"
+		case PROC_FAIL:
 			return "crashing"
 		}
 	}
@@ -73,6 +76,8 @@ func procString(status int32) string {
 		return "PROC_STARTING"
 	case PROC_RUNNING:
 		return "PROC_RUNNING"
+	case PROC_FAIL:
+		return "PROC_CRASHING"
 	case PROC_STOPPNG:
 		return "PROC_STOPPING"
 	}
