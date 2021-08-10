@@ -31,6 +31,9 @@ var (
 	Java15Path  = flag.String("Java15Path", "", "the path of java, should auto search if it is empty")
 	mode        = flag.String("mode", "", "the mode of running")
 
+
+	cfgread func(key string, defaultValue string) string
+
 	manager_exporter = &Exporter{}
 )
 
@@ -97,6 +100,17 @@ func Init() error {
 		log.Println("change current dir to \""+RootDir+"\",", e)
 	}
 	return nil
+}
+
+func SetCfgRead(read func(key string, defaultValue string) string) {
+	cfgread = read
+}
+
+func cfgRead(key string, defaultValue string) string {
+	if cfgread != nil {
+		return cfgread(key, defaultValue)
+	}
+	return defaultValue
 }
 
 func New(arguments map[string]interface{}) (*Manager, error) {
@@ -735,6 +749,7 @@ func loadProperties(root string, files []string) (map[string]interface{}, error)
 }
 
 var funcs = template.FuncMap{
+	"cfg":          cfgRead,
 	"fileExists":   FileExists,
 	"joinFilePath": filepath.Join,
 	"joinUrlPath": func(base string, paths ...string) string {

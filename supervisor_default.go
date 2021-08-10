@@ -295,8 +295,7 @@ func (self *supervisor_default) run(cb func()) {
 		self.pid = 0
 		self.cond.L.Unlock()
 
-
-		if st := atomic.LoadInt32(&self.srv_status); SRV_RUNNING != st && SRV_STARTING != st {
+		if st := atomic.LoadInt32(&self.srv_status); SRV_RUNNING == st || SRV_STARTING == st {
 			self.onEvent(PROC_FAIL)
 		} else {
 			self.onEvent(PROC_STOPPNG)
