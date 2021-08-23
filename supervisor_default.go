@@ -105,7 +105,7 @@ func (self *supervisor_default) init() {
 	})
 }
 
-func (self *supervisor_default) start() {
+func (self *supervisor_default) start() bool {
 	self.init()
 
 	if !self.casStatus(SRV_INIT, SRV_STARTING) {

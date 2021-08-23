@@ -41,17 +41,17 @@ func (self *supervisorWithPidfile) status() string {
 	return srvString(s)
 }
 
-func (self *supervisorWithPidfile) start() {
+func (self *supervisorWithPidfile) start() bool {
 	if self.pidFileExists() {
 		self.logString("[sys] ==================== srv  start ====================\r\n")
 		self.logString("[sys] process is already started by other\r\n")
 		atomic.CompareAndSwapInt32(&self.srv_status, SRV_INIT, SRV_RUNNING)
 		atomic.StoreInt32(&self.owner, 0)
-		return
+		return false
 	}
 
 	if !atomic.CompareAndSwapInt32(&self.srv_status, SRV_INIT, SRV_STARTING) {
-		return
+		return false
 	}
 
 	defer func() {
@@ -72,19 +72,21 @@ func (self *supervisorWithPidfile) start() {
 		})
 
 		if SRV_STARTING != atomic.LoadInt32(&self.srv_status) {
-			return
+			return false
 		}
 	}
 
 	atomic.CompareAndSwapInt32(&self.srv_status, SRV_STARTING, PROC_INIT)
+
+	return true
 }
 
-func (self *supervisorWithPidfile) stop() {
+func (self *supervisorWithPidfile) stop() bool {
 	if 1 != atomic.LoadInt32(&self.owner) {
 		atomic.CompareAndSwapInt32(&self.srv_status, SRV_RUNNING, SRV_INIT)
 		self.logString("[sys] ignore process\r\n")
 		self.logString("[sys] ====================  srv  end  ====================\r\n")
-		return
+		return false
 	}
 
 	defer func() {
@@ -97,13 +99,15 @@ func (self *supervisorWithPidfile) stop() {
 
 	if !atomic.CompareAndSwapInt32(&self.srv_status, SRV_RUNNING, SRV_STOPPING) &&
 		!atomic.CompareAndSwapInt32(&self.srv_status, SRV_STARTING, SRV_STOPPING) {
-		return
+		return false
 	}
 
 	self.interrupt()
 	atomic.CompareAndSwapInt32(&self.srv_status, SRV_STOPPING, PROC_INIT)
 	atomic.StoreInt32(&self.owner, 0)
 	self.logString("[sys] ====================  srv  end  ====================\r\n")
+
+	return true
 }
 
 func (self *supervisorWithPidfile) untilStarted() error {
