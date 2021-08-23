@@ -117,8 +117,8 @@ func (self *command) command(mode string) *exec.Cmd {
 type supervisor interface {
 	fileName() string
 	name() string
-	start()
-	stop()
+	start() bool
+	stop() bool
 	isMode(mode string) bool
 	untilStarted() error
 	untilStopped() error

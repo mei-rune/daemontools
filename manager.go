@@ -113,13 +113,15 @@ func (self *Manager) StopByName(name string) error {
 func (self *Manager) stop(name string) error {
 	self.Disable(name)
 
-	log.Println("[system] disable '" + name + "'")
 	for _, sp := range self.supervisors {
 		if sp.name() == name {
-			sp.stop()
+			if sp.stop() {
+				log.Println("[system] disable '" + name + "' ok.")
+			}
 			return nil
 		}
 	}
+	log.Println("[system] disable '" + name + "' fail, no found.")
 	return errors.New(name + " isn't found.")
 }
 

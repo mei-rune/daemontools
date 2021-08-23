@@ -111,25 +111,28 @@ func (self *supervisor_default) start() {
 	if !self.casStatus(SRV_INIT, SRV_STARTING) {
 		if err := self.untilStopped(); err != nil {
 			log.Println("[system]", err)
-			return
+			return false
 		}
 		if !self.casStatus(SRV_INIT, SRV_STARTING) {
-			return
+			return false
 		}
 	}
 
 	go self.loop()
+
+	return true
 }
 
-func (self *supervisor_default) stop() {
+func (self *supervisor_default) stop() bool {
 	self.init()
 	self.logString(time.Now().String() + " [sys]swithing to '" + srvString(atomic.LoadInt32(&self.srv_status)) + "'\r\n")
 	if !self.casStatus(SRV_RUNNING, SRV_STOPPING) &&
 		!self.casStatus(SRV_STARTING, SRV_STOPPING) {
-		return
+		return false
 	}
 	self.logString(time.Now().String() + " [sys]swith to '" + srvString(atomic.LoadInt32(&self.srv_status)) + "'\r\n")
 	go self.interrupt()
+	return true
 }
 
 func (self *supervisor_default) interrupt() {
