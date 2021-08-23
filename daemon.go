@@ -230,7 +230,7 @@ func search_java_home_with_version(root, version string) string {
 		return jp
 	}
 
-	ss, _ := filepath.Glob(filepath.Join(root, "**", "java.exe"))
+	ss, _ := filepath.Glob(filepath.Join(root, "**", java_execute))
 	if nil != ss && 0 != len(ss) {
 		return ss[0]
 	}
@@ -340,7 +340,7 @@ func loadConfigs(root, execute string, files []string, defaultArgs map[string]in
 	}
 
 	logArguments := mapWithDefault(arguments, "log", map[string]interface{}{})
-	maxBytes := intWithDefault(logArguments, "maxBytes", 0)
+	maxBytes := bytesWithDefault(logArguments, "maxBytes", 0)
 	maxNum := intWithDefault(logArguments, "maxNum", 0)
 	if maxBytes < 1*1024*1024 {
 		maxBytes = 5 * 1024 * 1024
@@ -719,6 +719,7 @@ func loadProperties(root string, files []string) (map[string]interface{}, error)
 		if nil != e {
 			return nil, errors.New("generate config '" + file + "' failed, " + e.Error())
 		}
+		log.Println("load config '" + file + "' ok")
 
 		var arguments = readProperties(&buffer)
 		if len(arguments) > 0 {

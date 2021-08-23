@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 )
 
 type Exportable interface {
@@ -50,6 +51,34 @@ func boolWithDefault(args map[string]interface{}, key string, defaultValue bool)
 		return true
 	case "0", "false":
 		return false
+	default:
+		return defaultValue
+	}
+}
+
+func bytesWithDefault(args map[string]interface{}, key string, defaultValue int) int {
+	s := stringWithDefault(args, key, "")
+	if s == "" {
+		return defaultValue
+	}
+	pos := strings.IndexFunc(s, func(c rune) bool {
+		return !unicode.IsDigit(c)
+	})
+	if pos <= 0 {
+		return defaultValue
+	}
+
+	i, e := strconv.Atoi(s[:pos])
+	if nil != e {
+		return defaultValue
+	}
+	switch strings.ToLower(s[pos:]) {
+	case "kb", "k":
+		return i * 1024
+	case "mb", "m", "mib":
+		return i * 1024 * 1024
+	case "g", "gb":
+		return i * 1024 * 1024 * 1024
 	default:
 		return defaultValue
 	}
@@ -177,6 +206,15 @@ func stringsWithDefault(args map[string]interface{}, key, sep string, defaultVal
 func mapWithDefault(args map[string]interface{}, key string, defaultValue map[string]interface{}) map[string]interface{} {
 	v, ok := args[key]
 	if !ok {
+		prefix := key + "."
+		if defaultValue == nil {
+			defaultValue = map[string]interface{}{}
+		}
+		for k, v := range args {
+			if strings.HasPrefix(k, prefix) {	
+				defaultValue[strings.TrimPrefix(k, prefix)] = v
+			}
+		}
 		return defaultValue
 	}
 	if m, ok := v.(map[string]interface{}); ok && nil != m {
