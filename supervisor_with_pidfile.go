@@ -20,6 +20,14 @@ type supervisorWithPidfile struct {
 	pidfile    string
 }
 
+func (self *supervisorWithPidfile) GetStatus() Status {
+	return Status{
+		Name:   self.name(),
+		Pid:    0,
+		Status: "",
+	}
+}
+
 func (self *supervisorWithPidfile) stats() map[string]interface{} {
 	srv_status := self.status()
 	res := self.supervisorBase.stats()

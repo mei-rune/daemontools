@@ -73,6 +73,14 @@ func (self *Manager) Names() []string {
 	return names
 }
 
+func (self *Manager) GetStatus() []Status {
+	names := make([]Status, len(self.supervisors))
+	for idx, s := range self.supervisors {
+		names[idx] = s.GetStatus()
+	}
+	return names
+}
+
 func (self *Manager) Mode() string {
 	return self.mode
 }

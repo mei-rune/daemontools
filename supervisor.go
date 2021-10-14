@@ -65,7 +65,7 @@ func srvString(status int32) string {
 }
 
 func ToProcString(status int32) string {
-	return procString(status) 
+	return procString(status)
 }
 
 func procString(status int32) string {
@@ -114,6 +114,12 @@ func (self *command) command(mode string) *exec.Cmd {
 	}
 }
 
+type Status struct {
+	Name   string
+	Pid    int64
+	Status string
+}
+
 type supervisor interface {
 	fileName() string
 	name() string
@@ -126,6 +132,7 @@ type supervisor interface {
 	setManager(mgr *Manager)
 	setOutput(out io.Writer)
 	stats() map[string]interface{}
+	GetStatus() Status
 }
 
 type supervisorBase struct {

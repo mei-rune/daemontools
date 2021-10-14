@@ -27,7 +27,26 @@ type supervisor_default struct {
 	once sync.Once
 }
 
+func (self *supervisor_default) GetStatus() Status {
+	self.init()
+
+	self.cond.L.Lock()
+	pid := self.pid
+	self.cond.L.Unlock()
+
+	srv_status := atomic.LoadInt32(&self.srv_status)
+	proc_status := atomic.LoadInt32(&self.proc_status)
+
+	return Status{
+		Name:   self.name(),
+		Pid:    int64(pid),
+		Status: statusString(srv_status, proc_status),
+	}
+}
+
 func (self *supervisor_default) closeStdin() {
+	self.init()
+
 	self.cond.L.Lock()
 	defer self.cond.L.Unlock()
 	if nil == self.stdin {
@@ -39,6 +58,7 @@ func (self *supervisor_default) closeStdin() {
 
 func (self *supervisor_default) stats() map[string]interface{} {
 	self.init()
+
 	pid := 0
 	self.cond.L.Lock()
 	pid = self.pid
