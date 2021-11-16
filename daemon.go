@@ -31,7 +31,6 @@ var (
 	Java15Path  = flag.String("Java15Path", "", "the path of java, should auto search if it is empty")
 	mode        = flag.String("mode", "", "the mode of running")
 
-
 	cfgread func(key string, defaultValue string) string
 
 	manager_exporter = &Exporter{}
@@ -672,7 +671,7 @@ func loadJavaArguments(arguments []string, args []map[string]interface{}) ([]str
 
 	jar := stringWithArguments(args, "java_jar", "")
 	if 0 != len(jar) {
-		results = append(results, jar)
+		results = append(results, "-jar", jar)
 	}
 
 	if nil != arguments && 0 != len(arguments) {
