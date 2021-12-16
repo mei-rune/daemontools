@@ -48,6 +48,10 @@ func (w *rotateFile) Flush() {
 	w.file.Sync()
 }
 
+func (w *rotateFile) Sync() error {
+	return w.file.Sync()
+}
+
 func (w *rotateFile) Close() error {
 	return w.file.Close()
 }
