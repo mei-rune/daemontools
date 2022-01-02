@@ -27,6 +27,8 @@ var (
 	config_file = flag.String("config", "", "the config file path")
 	pre_start   = flag.String("pre_start", "pre_start.bat", "the name of pre start")
 	post_finish = flag.String("post_finish", "post_finish.bat", "the name of post finish")
+	JavaHomePath    = flag.String("JavaHomePath", "", "the path of java home, should auto search if it is empty")
+	Java15HomePath  = flag.String("Java15HomePath", "", "the path of java home, should auto search if it is empty")
 	JavaPath    = flag.String("JavaPath", "", "the path of java, should auto search if it is empty")
 	Java15Path  = flag.String("Java15Path", "", "the path of java, should auto search if it is empty")
 	mode        = flag.String("mode", "", "the mode of running")
@@ -98,6 +100,34 @@ func Init() error {
 	if nil != e {
 		log.Println("change current dir to \""+RootDir+"\",", e)
 	}
+
+	javaExecute := "java.exe"
+	if "windows" != runtime.GOOS {
+		javaExecute = "java"
+	}
+	if *JavaPath != "" {
+		if *JavaHomePath == "" {
+			*JavaHomePath = abs(filepath.Join(filepath.Base(*JavaPath), ".."))
+		}
+	} else if *JavaHomePath != "" {
+		*JavaPath = filepath.Join(*JavaHomePath, "bin", javaExecute)
+	} else {
+		*JavaPath = searchJavaExecute(RootDir)
+		*JavaHomePath = searchJavaHome(RootDir)
+		log.Println("[warn] java is", *JavaPath)
+	}
+	if *Java15Path != "" {
+		if *Java15HomePath == "" {
+			*Java15HomePath = abs(filepath.Join(filepath.Base(*Java15Path), ".."))
+		}
+	} else if *Java15HomePath != "" {
+		*Java15Path = filepath.Join(*Java15HomePath, "bin", javaExecute)
+	} else {
+		*Java15Path = searchJava15Execute(RootDir)
+		*Java15HomePath = searchJava15Home(RootDir)
+		log.Println("[warn] java15 is", *Java15Path)
+	}
+
 	return nil
 }
 
@@ -146,15 +176,7 @@ func New(arguments map[string]interface{}) (*Manager, error) {
 		}
 	}
 
-	if 0 == len(*JavaPath) {
-		*JavaPath = search_java_home(RootDir)
-		log.Println("[warn] java is", *JavaPath)
-	}
 
-	if 0 == len(*Java15Path) {
-		*Java15Path = search_java15_home(RootDir)
-		log.Println("[warn] java15 is", *Java15Path)
-	}
 
 	mgr, e := loadConfigs(RootDir, Program, files, arguments)
 	if nil != e {
@@ -200,46 +222,72 @@ func New(arguments map[string]interface{}) (*Manager, error) {
 	return mgr, nil
 }
 
-func search_java_home(root string) string {
-	return search_java_home_with_version(root, "")
-}
-
-func search_java15_home(root string) string {
-	return search_java_home_with_version(root, "15")
-}
-
-func search_java_home_with_version(root, version string) string {
-	java_execute := "java.exe"
+func searchJavaExecute(root string) string {
+	javaExecute := "java.exe"
 	if "windows" != runtime.GOOS {
-		java_execute = "java"
+		javaExecute = "java"
 	}
 
-	jp := filepath.Join(root, "runtime_env/jdk"+version+"/bin", java_execute)
+	jh := searchJavaHome(root)
+	if jh == "" {
+		return javaExecute
+	}
+	return filepath.Join(jh, "bin", javaExecute)
+}
+
+func searchJava15Execute(root string) string {
+	javaExecute := "java.exe"
+	if "windows" != runtime.GOOS {
+		javaExecute = "java"
+	}
+
+	jh := searchJava15Home(root)
+	if jh == "" {
+		return javaExecute
+	}
+	return filepath.Join(jh, "bin", javaExecute)
+}
+
+func searchJavaHome(root string) string {
+	return searchJavaHomeWithVersion(root, "")
+}
+
+func searchJava15Home(root string) string {
+	return searchJavaHomeWithVersion(root, "15")
+}
+
+func searchJavaHomeWithVersion(root, version string) string {
+	javaExecute := "java.exe"
+	if "windows" != runtime.GOOS {
+		javaExecute = "java"
+	}
+
+	jp := filepath.Join(root, "runtime_env/jdk"+version+"/bin", javaExecute)
 	if FileExists(jp) {
-		return jp
+		return filepath.Join(root, "runtime_env/jdk"+version)
 	}
 
-	jp = filepath.Join(root, "runtime_env/java"+version+"/bin", java_execute)
+	jp = filepath.Join(root, "runtime_env/java"+version+"/bin", javaExecute)
 	if FileExists(jp) {
-		return jp
+		return filepath.Join(root, "runtime_env/java"+version) 
 	}
 
-	jp = filepath.Join(root, "runtime_env/jre"+version+"/bin", java_execute)
+	jp = filepath.Join(root, "runtime_env/jre"+version+"/bin", javaExecute)
 	if FileExists(jp) {
-		return jp
+		return filepath.Join(root, "runtime_env/jre"+version)
 	}
 
-	ss, _ := filepath.Glob(filepath.Join(root, "**", java_execute))
+	ss, _ := filepath.Glob(filepath.Join(root, "**", javaExecute))
 	if nil != ss && 0 != len(ss) {
-		return ss[0]
+		return abs(filepath.Join(filepath.Base(ss[0]), ".."))
 	}
 
 	jh := os.Getenv("JAVA" + version + "_HOME")
 	if "" != jh {
-		return filepath.Join(jh, "bin", java_execute)
+		return jh
 	}
 
-	return java_execute
+	return ""
 }
 
 func execute(pa string) error {
