@@ -341,7 +341,6 @@ end:
 }
 
 func (self *Manager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Method, r.URL.Path)
 	switch r.Method {
 	case "GET":
 		if "/status" == r.URL.Path {
