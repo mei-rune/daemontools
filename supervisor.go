@@ -300,6 +300,17 @@ func (self *supervisorBase) killByCmd(pid int) (bool, string) {
 	return true, ""
 }
 
+func (self *supervisorBase) logRotateToErrorFile() {
+	if nil == self.out {
+		return
+	}
+
+	w, ok := self.out.(RotateError)
+	if ok {
+		w.RotateToError()
+	}
+}
+
 func (self *supervisorBase) logString(msg string) {
 	if *is_print {
 		fmt.Print(msg)

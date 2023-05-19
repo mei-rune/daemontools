@@ -204,7 +204,6 @@ end:
 }
 
 func (self *supervisor_default) killByConsole(pid int) (bool, string) {
-
 	if nil == self.stop_cmd.arguments || 0 == len(self.stop_cmd.arguments) {
 		return false, "console arguments is empty"
 	}
@@ -282,6 +281,8 @@ func (self *supervisor_default) loop() {
 
 	self.logString("[sys] ==================== srv  start ====================\r\n")
 
+	startedAt := time.Now()
+
 	retries := self.retries
 	if retries <= 0 {
 		retries = 1
@@ -300,9 +301,17 @@ func (self *supervisor_default) loop() {
 		self.logString(time.Now().String() + " [sys]current status is '" + srvString(atomic.LoadInt32(&self.srv_status)) + "'\r\n")
 	}
 
+	restartAt := startedAt
+
 	for SRV_RUNNING == atomic.LoadInt32(&self.srv_status) {
+		if time.Now().Sub(restartAt) > 1 * time.Hour {
+				self.logRotateToErrorFile()
+		}
+
 		self.logString(time.Now().String() + " [sys]current status is '" + srvString(atomic.LoadInt32(&self.srv_status)) + "'\r\n")
 		time.Sleep(2 * time.Second)
+
+		restartAt = time.Now()
 		self.run(nil)
 	}
 }
