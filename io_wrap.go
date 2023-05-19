@@ -3,6 +3,7 @@ package daemontools
 import (
 	"bytes"
 	"sync"
+
 	//"fmt"
 	"io"
 )
@@ -57,6 +58,13 @@ func (self *matchWriter) Matched() bool {
 	return self.matched
 }
 
+func (w *matchWriter) RotateToError() {
+	r, ok := w.out.(RotateError)
+	if ok {
+		r.RotateToError()
+	}
+}
+
 func (self *matchWriter) Write(p []byte) (n int, err error) {
 	if self.matched {
 		if nil != self.out {
@@ -96,6 +104,16 @@ func (self *safe_writer) Write(p []byte) (n int, e error) {
 	self.Lock()
 	defer self.Unlock()
 	return self.Write(p)
+}
+
+func (self *safe_writer) RotateToError() {
+	self.Lock()
+	defer self.Unlock()
+
+	r, ok := self.out.(RotateError)
+	if ok {
+		r.RotateToError()
+	}
 }
 
 func safe_io(out io.Writer) io.Writer {

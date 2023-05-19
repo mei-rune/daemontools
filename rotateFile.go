@@ -5,6 +5,11 @@ import (
 	"os"
 )
 
+
+type RotateError interface {
+	RotateToError()
+}
+
 type rotateFile struct {
 	filename     string
 	maxBytes     int
@@ -14,9 +19,16 @@ type rotateFile struct {
 	file *os.File
 }
 
+func (w *rotateFile) RotateToError() {
+		if err := w.initRotate(true); nil != err {
+			fmt.Println("rotate file(%q): %s\n", w.filename, err)
+		}
+}
+
+
 func (w *rotateFile) Write(s []byte) (int, error) {
 	if w.currentBytes >= w.maxBytes {
-		if err := w.initRotate(); nil != err {
+		if err := w.initRotate(false); nil != err {
 			return 0, fmt.Errorf("rotate file(%q): %s\n", w.filename, err)
 		}
 	}
@@ -31,7 +43,7 @@ func (w *rotateFile) Write(s []byte) (int, error) {
 
 func (w *rotateFile) WriteString(s string) (int, error) {
 	if w.currentBytes >= w.maxBytes {
-		if err := w.initRotate(); nil != err {
+		if err := w.initRotate(false); nil != err {
 			return 0, fmt.Errorf("rotate file(%q): %s\n", w.filename, err)
 		}
 	}
@@ -59,7 +71,7 @@ func (w *rotateFile) Close() error {
 func NewRotateFile(fname string, maxBytes, maxNum int) (*rotateFile, error) {
 	w := &rotateFile{filename: fname, maxBytes: maxBytes, currentBytes: 0, maxNum: maxNum}
 
-	if err := w.initRotate(); nil != err {
+	if err := w.initRotate(false); nil != err {
 		fmt.Fprintf(os.Stderr, "rotateFile(%q): %s\n", w.filename, err)
 		return nil, err
 	}
@@ -67,14 +79,19 @@ func NewRotateFile(fname string, maxBytes, maxNum int) (*rotateFile, error) {
 	return w, nil
 }
 
-func (w *rotateFile) initRotate() error {
+func (w *rotateFile) initRotate(isError bool) error {
 	if w.file != nil {
 		w.file.Close()
 	}
 
+
 	_, err := os.Stat(w.filename)
 	if nil == err { // file exists
-		fname2 := w.filename + fmt.Sprintf(".%04d", w.maxNum)
+		filename := w.filename
+		if isError {
+			filename = filename + ".error"
+		}
+		fname2 := filename + fmt.Sprintf(".%04d", w.maxNum)
 		_, err = os.Stat(fname2)
 		if nil == err {
 			err = os.Remove(fname2)
@@ -86,7 +103,7 @@ func (w *rotateFile) initRotate() error {
 		fname1 := fname2
 		for num := w.maxNum - 1; num > 0; num-- {
 			fname2 = fname1
-			fname1 = w.filename + fmt.Sprintf(".%04d", num)
+			fname1 = filename + fmt.Sprintf(".%04d", num)
 
 			_, err = os.Stat(fname1)
 			if nil != err {
@@ -98,7 +115,7 @@ func (w *rotateFile) initRotate() error {
 			}
 		}
 
-		err = os.Rename(w.filename, fname1)
+		err = os.Rename(filename, fname1)
 		if err != nil {
 			return err
 		}

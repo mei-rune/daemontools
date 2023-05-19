@@ -20,18 +20,18 @@ import (
 )
 
 var (
-	RootDir     = "."
-	LogDir      = ""
-	Program     = "daemon"
-	is_print    = flag.Bool("print", false, "print search paths while config is not found")
-	config_file = flag.String("config", "", "the config file path")
-	pre_start   = flag.String("pre_start", "pre_start.bat", "the name of pre start")
-	post_finish = flag.String("post_finish", "post_finish.bat", "the name of post finish")
-	JavaHomePath    = flag.String("JavaHomePath", "", "the path of java home, should auto search if it is empty")
-	Java15HomePath  = flag.String("Java15HomePath", "", "the path of java home, should auto search if it is empty")
-	JavaPath    = flag.String("JavaPath", "", "the path of java, should auto search if it is empty")
-	Java15Path  = flag.String("Java15Path", "", "the path of java, should auto search if it is empty")
-	mode        = flag.String("mode", "", "the mode of running")
+	RootDir        = "."
+	LogDir         = ""
+	Program        = "daemon"
+	is_print       = flag.Bool("print", false, "print search paths while config is not found")
+	config_file    = flag.String("config", "", "the config file path")
+	pre_start      = flag.String("pre_start", "pre_start.bat", "the name of pre start")
+	post_finish    = flag.String("post_finish", "post_finish.bat", "the name of post finish")
+	JavaHomePath   = flag.String("JavaHomePath", "", "the path of java home, should auto search if it is empty")
+	Java15HomePath = flag.String("Java15HomePath", "", "the path of java home, should auto search if it is empty")
+	JavaPath       = flag.String("JavaPath", "", "the path of java, should auto search if it is empty")
+	Java15Path     = flag.String("Java15Path", "", "the path of java, should auto search if it is empty")
+	mode           = flag.String("mode", "", "the mode of running")
 
 	cfgread func(key string, defaultValue string) string
 
@@ -176,8 +176,6 @@ func New(arguments map[string]interface{}) (*Manager, error) {
 		}
 	}
 
-
-
 	mgr, e := loadConfigs(RootDir, Program, files, arguments)
 	if nil != e {
 		return nil, e
@@ -269,7 +267,7 @@ func searchJavaHomeWithVersion(root, version string) string {
 
 	jp = filepath.Join(root, "runtime_env/java"+version+"/bin", javaExecute)
 	if FileExists(jp) {
-		return filepath.Join(root, "runtime_env/java"+version) 
+		return filepath.Join(root, "runtime_env/java"+version)
 	}
 
 	jp = filepath.Join(root, "runtime_env/jre"+version+"/bin", javaExecute)
@@ -734,7 +732,8 @@ func loadDefault(root, file string) map[string]interface{} {
 		file_dir = filepath.Dir(file)
 	}
 
-	return map[string]interface{}{"root_dir": root,
+	return map[string]interface{}{
+		"root_dir": root,
 		"file_dir": file_dir,
 		"java15":   *Java15Path,
 		"java":     *JavaPath,
@@ -743,7 +742,6 @@ func loadDefault(root, file string) map[string]interface{} {
 }
 
 func loadProperties(root string, files []string) (map[string]interface{}, error) {
-
 	osExt := ".exe"
 	batExt := ".bat"
 	if runtime.GOOS != "windows" {

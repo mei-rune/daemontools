@@ -211,7 +211,7 @@ func mapWithDefault(args map[string]interface{}, key string, defaultValue map[st
 			defaultValue = map[string]interface{}{}
 		}
 		for k, v := range args {
-			if strings.HasPrefix(k, prefix) {	
+			if strings.HasPrefix(k, prefix) {
 				defaultValue[strings.TrimPrefix(k, prefix)] = v
 			}
 		}
