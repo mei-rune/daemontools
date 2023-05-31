@@ -5,7 +5,6 @@ import (
 	"os"
 )
 
-
 type RotateError interface {
 	RotateToError()
 }
@@ -20,11 +19,10 @@ type rotateFile struct {
 }
 
 func (w *rotateFile) RotateToError() {
-		if err := w.initRotate(true); nil != err {
-			fmt.Println("rotate file(%q): %s\n", w.filename, err)
-		}
+	if err := w.initRotate(true); nil != err {
+		fmt.Printf("rotate file(%q): %s\n", w.filename, err)
+	}
 }
-
 
 func (w *rotateFile) Write(s []byte) (int, error) {
 	if w.currentBytes >= w.maxBytes {
@@ -83,7 +81,6 @@ func (w *rotateFile) initRotate(isError bool) error {
 	if w.file != nil {
 		w.file.Close()
 	}
-
 
 	_, err := os.Stat(w.filename)
 	if nil == err { // file exists

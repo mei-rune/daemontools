@@ -281,38 +281,46 @@ func (self *supervisor_default) loop() {
 
 	self.logString("[sys] ==================== srv  start ====================\r\n")
 
-	startedAt := time.Now()
+	maxRetries := self.retries
+	if maxRetries <= 0 {
+		maxRetries = 1
+	}
+	if maxRetries > 10 {
+		maxRetries = 10
+	}
 
-	retries := self.retries
-	if retries <= 0 {
-		retries = 1
-	}
-	if retries > 10 {
-		retries = 10
-	}
-	for i := 0; i < retries; i++ {
-		self.run(func() {
-			self.casStatus(SRV_STARTING, SRV_RUNNING)
-		})
-		if SRV_STARTING != atomic.LoadInt32(&self.srv_status) {
+	isRunning := true
+	retries := 0
+	for isRunning {
+		retries++
+
+		var onStartOk func()
+
+		status := atomic.LoadInt32(&self.srv_status)
+		switch status {
+		case SRV_RUNNING:
+			time.Sleep(2 * time.Second)
+		case SRV_STARTING:
+			if retries >= maxRetries {
+				isRunning = false
+				break
+			}
+			onStartOk = func() {
+				self.casStatus(SRV_STARTING, SRV_RUNNING)
+			}
+		default:
+			isRunning = false
 			break
 		}
 
+		restartAt := time.Now()
 		self.logString(time.Now().String() + " [sys]current status is '" + srvString(atomic.LoadInt32(&self.srv_status)) + "'\r\n")
-	}
 
-	restartAt := startedAt
+		self.run(onStartOk)
 
-	for SRV_RUNNING == atomic.LoadInt32(&self.srv_status) {
-		if time.Now().Sub(restartAt) > 1 * time.Hour {
-				self.logRotateToErrorFile()
+		if time.Now().Sub(restartAt) > 30*time.Minute {
+			self.logRotateToErrorFile()
 		}
-
-		self.logString(time.Now().String() + " [sys]current status is '" + srvString(atomic.LoadInt32(&self.srv_status)) + "'\r\n")
-		time.Sleep(2 * time.Second)
-
-		restartAt = time.Now()
-		self.run(nil)
 	}
 }
 

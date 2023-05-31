@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"fmt"
 	"net"
+	"net/http"
+	_ "net/http/pprof"
 	"net/textproto"
 	"os"
 	"path/filepath"
@@ -146,6 +148,8 @@ func TestStartWithEcho(t *testing.T) {
 }
 
 func TestStartFailed(t *testing.T) {
+	go http.ListenAndServe(":12345", nil)
+
 	success_flag := "TestStartFailed"
 	var buffer bytes.Buffer
 	wd, _ := os.Getwd()
