@@ -112,7 +112,7 @@ func (w *rotateFile) initRotate(isError bool) error {
 			}
 		}
 
-		err = os.Rename(filename, fname1)
+		err = os.Rename(w.filename, fname1)
 		if err != nil {
 			return err
 		}

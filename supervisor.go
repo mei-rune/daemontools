@@ -302,12 +302,20 @@ func (self *supervisorBase) killByCmd(pid int) (bool, string) {
 
 func (self *supervisorBase) logRotateToErrorFile() {
 	if nil == self.out {
+		// self.logString("logRotateToErrorFile() but out is nil")
+		// fmt.Println("logRotateToErrorFile() but out is nil")
 		return
 	}
 
 	w, ok := self.out.(RotateError)
 	if ok {
 		w.RotateToError()
+
+		// 	self.logString("logRotateToErrorFile() ok - " + fmt.Sprintf("%T", self.out))
+		// 	fmt.Println("logRotateToErrorFile() ok - " + fmt.Sprintf("%T", self.out))
+		// } else {
+		// 	self.logString("logRotateToErrorFile() but out isnot RotateError -" + fmt.Sprintf("%T", self.out))
+		// 	fmt.Println("logRotateToErrorFile() but out isnot RotateError -" + fmt.Sprintf("%T", self.out))
 	}
 }
 

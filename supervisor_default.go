@@ -320,6 +320,11 @@ func (self *supervisor_default) loop() {
 
 		if time.Now().Sub(restartAt) > 30*time.Minute {
 			self.logRotateToErrorFile()
+			// 	self.logString("logRotateToErrorFile()")
+			// 	fmt.Println("logRotateToErrorFile()")
+			// } else {
+			// 	self.logString("logRotateToErrorFile() skip")
+			// 	fmt.Println("logRotateToErrorFile() skip")
 		}
 	}
 }
