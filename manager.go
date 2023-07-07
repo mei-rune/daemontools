@@ -198,9 +198,13 @@ func (self *Manager) Stats() interface{} {
 
 		res = append(res, values)
 	}
+	settings := map[string]string{}
+	for key, value := range self.settings {
+		settings[key] = fmt.Sprint(value)
+	}
 	return map[string]interface{}{"processes": res,
 		"version":  "1.0",
-		"settings": self.settings,
+		"settings": settings,
 		"skipped":  self.skipped}
 }
 
@@ -345,7 +349,13 @@ func (self *Manager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		if "/status" == r.URL.Path {
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(self.Stats())
+			err := json.NewEncoder(w).Encode(self.Stats())
+			if err != nil {
+				fmt.Println(err)
+
+				w.WriteHeader(http.StatusInternalServerError)
+				io.WriteString(w, err.Error())
+			}
 			return
 		}
 

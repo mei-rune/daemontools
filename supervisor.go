@@ -213,7 +213,8 @@ func (self *supervisorBase) stats() map[string]interface{} {
 		"kill_timeout": self.killTimeout,
 		"owned":        true,
 		"is_started":   (status != SRV_INIT) && (status != SRV_STOPPING),
-		"srv_status":   srvString(status)}
+		"srv_status":   srvString(status),
+	}
 }
 
 func (self *supervisorBase) setOutput(out io.Writer) {

@@ -118,6 +118,7 @@ func (w *rotateFile) initRotate(isError bool) error {
 		}
 	}
 
+	fmt.Println("log to", w.filename)
 	fd, err := os.OpenFile(w.filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
 		return err
