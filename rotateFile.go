@@ -78,10 +78,6 @@ func NewRotateFile(fname string, maxBytes, maxNum int) (*rotateFile, error) {
 }
 
 func (w *rotateFile) initRotate(isError bool) error {
-	if w.file != nil {
-		w.file.Close()
-	}
-
 	_, err := os.Stat(w.filename)
 	if nil == err { // file exists
 		filename := w.filename
@@ -90,10 +86,12 @@ func (w *rotateFile) initRotate(isError bool) error {
 		}
 		fname2 := filename + fmt.Sprintf(".%04d", w.maxNum)
 		_, err = os.Stat(fname2)
-		if nil == err {
+		if err == nil {
 			err = os.Remove(fname2)
 			if err != nil {
-				return err
+				if !os.IsNotExist(err) {
+					return err
+				}
 			}
 		}
 
@@ -108,15 +106,25 @@ func (w *rotateFile) initRotate(isError bool) error {
 			}
 			err = os.Rename(fname1, fname2)
 			if err != nil {
-				return err
+				if e := os.Remove(fname1); e != nil {
+					return err
+				}
 			}
+		}
+
+
+		if w.file != nil {
+			w.file.Close()
 		}
 
 		err = os.Rename(w.filename, fname1)
 		if err != nil {
-			return err
+			if !os.IsNotExist(err) {
+				return err
+			}
 		}
 	}
+
 
 	fmt.Println("log to", w.filename)
 	fd, err := os.OpenFile(w.filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
