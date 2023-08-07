@@ -290,7 +290,7 @@ func (self *supervisor_default) loop() {
 	}
 
 	isRunning := true
-	retries := 0
+	retries := -1
 	for isRunning {
 		retries++
 
@@ -317,6 +317,20 @@ func (self *supervisor_default) loop() {
 		self.logString(time.Now().String() + " [sys]current status is '" + srvString(atomic.LoadInt32(&self.srv_status)) + "'\r\n")
 
 		self.run(onStartOk)
+
+		status = atomic.LoadInt32(&self.srv_status)
+		switch status {
+		case SRV_RUNNING:
+			time.Sleep(2 * time.Second)
+		case SRV_STARTING:
+			if retries >= maxRetries {
+				isRunning = false
+				break
+			}
+		default:
+			isRunning = false
+			break
+		}
 
 		if time.Now().Sub(restartAt) > 30*time.Minute {
 			self.logRotateToErrorFile()
