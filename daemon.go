@@ -732,16 +732,27 @@ func loadDefault(root, file string) map[string]interface{} {
 		file_dir = filepath.Dir(file)
 	}
 
-	return map[string]interface{}{
+	return ensureDefault(map[string]interface{}{
 		"root_dir": root,
 		"file_dir": file_dir,
-		"java15":   *Java15Path,
-		"java":     *JavaPath,
-		"os":       runtime.GOOS,
-		"arch":     runtime.GOARCH}
+	})
 }
 
-func loadProperties(root string, files []string) (map[string]interface{}, error) {
+func ensureDefault(values map[string]interface{}) map[string]interface{} {
+	if _, ok := values["java"]; !ok {
+		values["java"] = *JavaPath
+	}
+	if _, ok := values["java15"]; !ok {
+		values["java15"] = *Java15Path
+	}
+	if _, ok := values["os"]; !ok {
+		values["os"] = runtime.GOOS
+	}
+	if _, ok := values["arch"]; !ok {
+		values["arch"] = runtime.GOARCH
+	}
+
+
 	osExt := ".exe"
 	batExt := ".bat"
 	if runtime.GOOS != "windows" {
@@ -749,7 +760,18 @@ func loadProperties(root string, files []string) (map[string]interface{}, error)
 		batExt = ".sh"
 	}
 
-	var all_arguments = make(map[string]interface{})
+	if _, ok := values["os_ext"]; !ok {
+		values["os_ext"] = osExt
+	}
+	if _, ok := values["sh_ext"]; !ok {
+		values["sh_ext"] = batExt
+	}
+
+	return values
+}
+
+func loadProperties(root string, files []string) (map[string]interface{}, error) {
+	var allArguments = make(map[string]interface{})
 	for _, file := range files {
 		t, e := loadTemplateFile(file)
 		if nil != e {
@@ -757,8 +779,6 @@ func loadProperties(root string, files []string) (map[string]interface{}, error)
 		}
 		args := loadDefault(root, file)
 
-		args["sh_ext"] = batExt
-		args["os_ext"] = osExt
 		var buffer bytes.Buffer
 		e = t.Execute(&buffer, args)
 		if nil != e {
@@ -769,29 +789,26 @@ func loadProperties(root string, files []string) (map[string]interface{}, error)
 		var arguments = readProperties(&buffer)
 		if len(arguments) > 0 {
 			for k, v := range arguments {
-				all_arguments[k] = v
+				allArguments[k] = v
 			}
 		}
 	}
 
-	if s, ok := all_arguments["java"]; ok {
+	if s, ok := allArguments["java"]; ok {
 		*JavaPath = fmt.Sprint(s)
 	} else {
-		all_arguments["java"] = *JavaPath
+		allArguments["java"] = *JavaPath
 	}
 
-	if s, ok := all_arguments["java15"]; ok {
+	if s, ok := allArguments["java15"]; ok {
 		*Java15Path = fmt.Sprint(s)
 	} else {
-		all_arguments["java15"] = *Java15Path
+		allArguments["java15"] = *Java15Path
 	}
 
-	all_arguments["root_dir"] = root
-	all_arguments["os"] = runtime.GOOS
-	all_arguments["os_ext"] = osExt
-	all_arguments["sh_ext"] = batExt
-	all_arguments["arch"] = runtime.GOARCH
-	return all_arguments, nil
+	// 下面的代码应在 
+	allArguments["root_dir"] = root
+	return ensureDefault(allArguments), nil
 }
 
 var funcs = template.FuncMap{
