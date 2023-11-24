@@ -742,9 +742,16 @@ func ensureDefault(values map[string]interface{}) map[string]interface{} {
 	if _, ok := values["java"]; !ok {
 		values["java"] = *JavaPath
 	}
+	if _, ok := values["java_home"]; !ok {
+		values["java_home"] = *JavaHomePath
+	}
 	if _, ok := values["java15"]; !ok {
 		values["java15"] = *Java15Path
 	}
+	if _, ok := values["java15_home"]; !ok {
+		values["java15_home"] = *Java15HomePath
+	}
+	
 	if _, ok := values["os"]; !ok {
 		values["os"] = runtime.GOOS
 	}
@@ -812,6 +819,16 @@ func loadProperties(root string, files []string) (map[string]interface{}, error)
 }
 
 var funcs = template.FuncMap{
+	"pathNormalize": func(s string) string {
+		if runtime.GOOS == "windows" {
+			return strings.Replace(s, "/", "\\", -1)
+		}
+		return filepath.ToSlash(s)
+	},
+	"replace": func(s, old, new string) string {
+		return strings.Replace(s, old, new, -1)
+	},
+	"toSlash": filepath.ToSlash,
 	"cfg":          cfgRead,
 	"fileExists":   FileExists,
 	"joinFilePath": filepath.Join,

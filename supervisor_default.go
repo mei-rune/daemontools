@@ -418,6 +418,10 @@ func (self *supervisor_default) run(cb func()) {
 		self.logString(fmt.Sprintf("[sys] \t\t%v\r\n", s))
 	}
 
+	for _, s := range self.start_cmd.environments {
+		self.logString(fmt.Sprintf("[sys] \t\t[env]%v\r\n", s))
+	}
+
 	self.onEvent(PROC_STARTING)
 	if e = cmd.Start(); nil != e {
 
