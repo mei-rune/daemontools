@@ -21,6 +21,7 @@ import (
 
 var (
 	RootDir        = "."
+	SubDirs        = []string{}
 	LogDir         = ""
 	Program        = "daemon"
 	is_print       = flag.Bool("print", false, "print search paths while config is not found")
@@ -176,7 +177,7 @@ func New(arguments map[string]interface{}) (*Manager, error) {
 		}
 	}
 
-	mgr, e := loadConfigs(RootDir, Program, files, arguments)
+	mgr, e := loadConfigs(RootDir, SubDirs, Program, files, arguments)
 	if nil != e {
 		return nil, e
 	}
@@ -305,7 +306,7 @@ func execute(pa string) error {
 	return cmd.Run()
 }
 
-func loadConfigs(root, execute string, files []string, defaultArgs map[string]interface{}) (*Manager, error) {
+func loadConfigs(root string, subdirs []string, execute string, files []string, defaultArgs map[string]interface{}) (*Manager, error) {
 	var arguments map[string]interface{}
 	//"autostart_"
 	if len(files) > 0 {
@@ -341,6 +342,17 @@ func loadConfigs(root, execute string, files []string, defaultArgs map[string]in
 		filepath.Clean(abs(filepath.Join(root, "*/*-autostart.conf"))),
 		filepath.Clean(abs(filepath.Join(root, "*/autostart-*.conf"))),
 		filepath.Clean(abs(filepath.Join(root, "*/autostart_*.conf"))))
+
+	for _, subdir := range subdirs {		
+		patterns = append(patterns, filepath.Clean(abs(filepath.Join(subdir, "autostart_*.conf"))),
+			filepath.Clean(abs(filepath.Join(subdir, "*_autostart.conf"))),
+			filepath.Clean(abs(filepath.Join(subdir, "*-autostart.conf"))),
+			filepath.Clean(abs(filepath.Join(subdir, "autostart-*.conf"))),
+			filepath.Clean(abs(filepath.Join(subdir, "*/*_autostart.conf"))),
+			filepath.Clean(abs(filepath.Join(subdir, "*/*-autostart.conf"))),
+			filepath.Clean(abs(filepath.Join(subdir, "*/autostart-*.conf"))),
+			filepath.Clean(abs(filepath.Join(subdir, "*/autostart_*.conf"))))
+	}
 
 	mgr := &Manager{
 		cr: cron.New(),
