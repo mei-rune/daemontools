@@ -143,6 +143,14 @@ func cfgRead(key string, defaultValue string) string {
 	return defaultValue
 }
 
+
+func envRead(key string) string {
+	if cfgread != nil {
+		return cfgread(key, "")
+	}
+	return ""
+}
+
 func New(arguments map[string]interface{}) (*Manager, error) {
 	guess_files := []string{filepath.Clean(abs(filepath.Join(RootDir, Program+".properties"))),
 		filepath.Clean(abs(filepath.Join(RootDir, "etc", Program+".properties"))),
@@ -635,6 +643,14 @@ func loadCommand(args []map[string]interface{}) (*command, error) {
 		}
 	}
 
+	proc = os.Expand(proc, envRead)
+	for idx  := range arguments {
+		arguments[idx] = os.Expand(arguments[idx], envRead)
+	}
+	for idx  := range environments {
+		environments[idx] = os.Expand(environments[idx], envRead)
+	}
+	directory = os.Expand(directory, envRead)
 	return &command{proc: proc, arguments: arguments, environments: environments, directory: directory}, nil
 }
 
